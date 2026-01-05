@@ -1,11 +1,22 @@
-import React from 'react';
-import { X, Trash2, Minus, Plus, ShoppingBag } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Trash2, Minus, Plus, ShoppingBag, Gift, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useLoyalty } from '../contexts/LoyaltyContext';
 
-const CartModal = ({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem }) => {
+const CartModal = ({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem, onCheckout }) => {
   // if (!isOpen) return null; // Handled by AnimatePresence in App.jsx
+  const { vouchers } = useLoyalty();
+  const [useVoucher, setUseVoucher] = useState(false);
 
-  const total = cartItems.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
+  const subtotal = cartItems.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
+  
+  // Tìm món đắt nhất để miễn phí khi dùng voucher
+  const mostExpensiveItem = cartItems.length > 0 
+    ? Math.max(...cartItems.map(item => item.finalPrice))
+    : 0;
+  
+  const discount = useVoucher && vouchers > 0 ? mostExpensiveItem : 0;
+  const total = subtotal - discount;
 
   return (
     <motion.div 
@@ -119,13 +130,76 @@ const CartModal = ({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem 
         {/* Footer */}
         {cartItems.length > 0 && (
           <div className="p-5 bg-white border-t border-stone-200 rounded-b-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-stone-500 font-medium">Tổng cộng</span>
-              <span className="text-2xl font-black text-stone-800">
-                {total.toLocaleString()} <span className="text-sm text-stone-500 font-bold">VND</span>
-              </span>
+            {/* Voucher Checkbox */}
+            {vouchers > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 p-3 bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-200 rounded-xl"
+              >
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={useVoucher}
+                    onChange={(e) => setUseVoucher(e.target.checked)}
+                    className="w-5 h-5 accent-orange-500 cursor-pointer"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Gift className="text-orange-600 fill-orange-600" size={18} />
+                      <span className="font-black text-stone-800 text-sm">Dùng voucher miễn phí</span>
+                    </div>
+                    <p className="text-xs text-orange-600 font-bold mt-0.5">
+                      Giảm {mostExpensiveItem.toLocaleString()}đ • Còn {vouchers} voucher
+                    </p>
+                  </div>
+                  {useVoucher && (
+                    <motion.div
+                      initial={{ scale: 0, rotate: -180 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ type: 'spring', stiffness: 300 }}
+                    >
+                      <Sparkles className="text-orange-600 fill-orange-600" size={24} />
+                    </motion.div>
+                  )}
+                </label>
+              </motion.div>
+            )}
+
+            {/* Total Summary */}
+            <div className="space-y-2 mb-4">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-stone-500 font-medium">Tạm tính</span>
+                <span className="font-bold text-stone-700">{subtotal.toLocaleString()}đ</span>
+              </div>
+              
+              {useVoucher && discount > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="flex justify-between items-center text-sm"
+                >
+                  <span className="text-orange-600 font-bold flex items-center gap-1">
+                    <Gift size={14} />
+                    Voucher giảm giá
+                  </span>
+                  <span className="font-bold text-orange-600">-{discount.toLocaleString()}đ</span>
+                </motion.div>
+              )}
+
+              <div className="flex justify-between items-center pt-2 border-t border-stone-200">
+                <span className="text-stone-800 font-black">Tổng cộng</span>
+                <span className="text-2xl font-black text-stone-800">
+                  {total.toLocaleString()} <span className="text-sm text-stone-500 font-bold">đ</span>
+                </span>
+              </div>
             </div>
-            <button className="w-full bg-stone-900 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-stone-300 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+
+            <button 
+              onClick={() => onCheckout(useVoucher)}
+              className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-orange-300/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            >
+              <Sparkles className="fill-white" size={20} />
               ĐẶT MÓN NGAY
             </button>
           </div>
