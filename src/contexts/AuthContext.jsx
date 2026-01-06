@@ -1,103 +1,146 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
+import { 
+  COLLECTIONS, 
+  getDocument, 
+  setDocument, 
+  updateDocument,
+} from '../firebase/firestore';
 
 const AuthContext = createContext();
 
 // Admin phone number (có thể thay đổi)
 const ADMIN_PHONE = '1111111111';
 
-// LocalStorage keys
-const USER_KEY = 'peak_user'; // Current logged-in user
-const USERS_DB_KEY = 'peak_users_db'; // Database of all registered users
+// LocalStorage key cho current user (để auto-login)
+const USER_KEY = 'peak_user';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Load user từ LocalStorage khi app khởi động (auto-login)
   useEffect(() => {
-    const savedUser = localStorage.getItem(USER_KEY);
-    if (savedUser) {
-      const userData = JSON.parse(savedUser);
-      setUser(userData);
-      setIsAdmin(userData.phone === ADMIN_PHONE);
-    }
+    const loadUser = async () => {
+      try {
+        const savedUser = localStorage.getItem(USER_KEY);
+        if (savedUser) {
+          const userData = JSON.parse(savedUser);
+          
+          // Verify với Firestore (case user bị xóa khỏi DB)
+          const firestoreUser = await getDocument(COLLECTIONS.USERS, userData.phone);
+          
+          if (firestoreUser) {
+            setUser(firestoreUser);
+            setIsAdmin(firestoreUser.phone === ADMIN_PHONE);
+            
+            // Update lastLogin trong Firestore
+            await updateDocument(COLLECTIONS.USERS, userData.phone, {
+              lastLoginAt: new Date().toISOString(),
+            });
+          } else {
+            // User không còn tồn tại trong Firestore
+            localStorage.removeItem(USER_KEY);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error loading user:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUser();
   }, []);
 
-  // Lấy danh sách users đã đăng ký
-  const getUsersDB = () => {
-    const db = localStorage.getItem(USERS_DB_KEY);
-    return db ? JSON.parse(db) : {};
-  };
-
-  // Lưu user vào database
-  const saveUserToDB = (phone, name) => {
-    const usersDB = getUsersDB();
-    usersDB[phone] = {
-      phone,
-      name,
-      registeredAt: new Date().toISOString(),
-      lastLoginAt: new Date().toISOString(),
-    };
-    localStorage.setItem(USERS_DB_KEY, JSON.stringify(usersDB));
-  };
-
-  // Cập nhật lastLogin
-  const updateLastLogin = (phone) => {
-    const usersDB = getUsersDB();
-    if (usersDB[phone]) {
-      usersDB[phone].lastLoginAt = new Date().toISOString();
-      localStorage.setItem(USERS_DB_KEY, JSON.stringify(usersDB));
+  // Kiểm tra số điện thoại đã đăng ký chưa (check Firestore)
+  const isPhoneRegistered = async (phone) => {
+    try {
+      const user = await getDocument(COLLECTIONS.USERS, phone);
+      return !!user;
+    } catch (error) {
+      console.error('❌ Error checking phone:', error);
+      return false;
     }
   };
 
-  // Kiểm tra số điện thoại đã đăng ký chưa
-  const isPhoneRegistered = (phone) => {
-    const usersDB = getUsersDB();
-    return usersDB.hasOwnProperty(phone);
-  };
-
-  // Lấy thông tin user từ số điện thoại
-  const getUserByPhone = (phone) => {
-    const usersDB = getUsersDB();
-    return usersDB[phone] || null;
-  };
-
-  // Đăng ký (lần đầu): cần tên + SĐT
-  const register = (phone, name) => {
-    if (isPhoneRegistered(phone)) {
-      return { success: false, message: 'Số điện thoại đã được đăng ký!' };
+  // Lấy thông tin user từ số điện thoại (từ Firestore)
+  const getUserByPhone = async (phone) => {
+    try {
+      return await getDocument(COLLECTIONS.USERS, phone);
+    } catch (error) {
+      console.error('❌ Error getting user:', error);
+      return null;
     }
-
-    // Lưu vào database
-    saveUserToDB(phone, name);
-
-    // Login luôn
-    const userData = { phone, name };
-    setUser(userData);
-    setIsAdmin(phone === ADMIN_PHONE);
-    localStorage.setItem(USER_KEY, JSON.stringify(userData));
-
-    return { success: true };
   };
 
-  // Đăng nhập (lần sau): chỉ cần SĐT
-  const login = (phone) => {
-    const existingUser = getUserByPhone(phone);
-    
-    if (!existingUser) {
-      return { success: false, message: 'Số điện thoại chưa được đăng ký!' };
+  // Đăng ký (lần đầu): cần tên + SĐT (sync Firestore)
+  const register = async (phone, name) => {
+    try {
+      // Kiểm tra xem đã đăng ký chưa
+      const existingUser = await getDocument(COLLECTIONS.USERS, phone);
+      
+      if (existingUser) {
+        return { success: false, message: 'Số điện thoại đã được đăng ký!' };
+      }
+
+      // Tạo user mới trong Firestore (dùng phone làm document ID)
+      const newUser = {
+        phone,
+        name,
+        isAdmin: phone === ADMIN_PHONE,
+        loyaltyPoints: 0,
+        loyaltyVouchers: 0,
+        streakDays: 0,
+        lastOrderDate: null,
+        registeredAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+      };
+
+      await setDocument(COLLECTIONS.USERS, phone, newUser);
+
+      // Login luôn
+      setUser(newUser);
+      setIsAdmin(phone === ADMIN_PHONE);
+      localStorage.setItem(USER_KEY, JSON.stringify(newUser));
+
+      // Không toast ở đây nữa - để LoginModal handle
+      return { success: true, user: newUser };
+    } catch (error) {
+      console.error('❌ Error registering:', error);
+      toast.error('Lỗi khi đăng ký. Vui lòng thử lại!');
+      return { success: false, message: 'Lỗi hệ thống!' };
     }
+  };
 
-    // Cập nhật lastLogin
-    updateLastLogin(phone);
+  // Đăng nhập (lần sau): chỉ cần SĐT (check Firestore)
+  const login = async (phone) => {
+    try {
+      const existingUser = await getDocument(COLLECTIONS.USERS, phone);
+      
+      if (!existingUser) {
+        return { success: false, message: 'Số điện thoại chưa được đăng ký!' };
+      }
 
-    // Login
-    const userData = { phone: existingUser.phone, name: existingUser.name };
-    setUser(userData);
-    setIsAdmin(phone === ADMIN_PHONE);
-    localStorage.setItem(USER_KEY, JSON.stringify(userData));
+      // Cập nhật lastLogin
+      await updateDocument(COLLECTIONS.USERS, phone, {
+        lastLoginAt: new Date().toISOString(),
+      });
 
-    return { success: true, user: userData };
+      // Login
+      const userData = { ...existingUser, lastLoginAt: new Date().toISOString() };
+      setUser(userData);
+      setIsAdmin(phone === ADMIN_PHONE);
+      localStorage.setItem(USER_KEY, JSON.stringify(userData));
+
+      // Không toast ở đây nữa - để LoginModal handle
+      return { success: true, user: userData };
+    } catch (error) {
+      console.error('❌ Error logging in:', error);
+      toast.error('Lỗi khi đăng nhập. Vui lòng thử lại!');
+      return { success: false, message: 'Lỗi hệ thống!' };
+    }
   };
 
   // Đăng xuất
@@ -105,11 +148,13 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setIsAdmin(false);
     localStorage.removeItem(USER_KEY);
+    toast.success('👋 Đã đăng xuất!');
   };
 
   const value = {
     user,
     isAdmin,
+    isLoading,
     register,
     login,
     logout,

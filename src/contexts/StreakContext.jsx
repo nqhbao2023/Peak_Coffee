@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
+import { COLLECTIONS, updateDocument } from '../firebase/firestore';
 
 const StreakContext = createContext();
 
@@ -15,29 +17,39 @@ export const StreakProvider = ({ children }) => {
   const [lastOrderDate, setLastOrderDate] = useState(null);
   const [orderDates, setOrderDates] = useState([]);
   const [streakHistory, setStreakHistory] = useState([]);
+  const { user } = useAuth();
 
-  // Load từ LocalStorage
+  // Load từ user profile trong Firestore
   useEffect(() => {
-    const savedStreak = localStorage.getItem('peak_streak');
-    const savedLastOrderDate = localStorage.getItem('peak_last_order_date');
-    const savedOrderDates = localStorage.getItem('peak_order_dates');
-    const savedStreakHistory = localStorage.getItem('peak_streak_history');
+    if (user) {
+      setStreak(user.streakDays || 0);
+      setLastOrderDate(user.lastOrderDate || null);
+      // orderDates và streakHistory có thể lưu riêng nếu cần
+    } else {
+      // Chưa login: dùng localStorage
+      const savedStreak = localStorage.getItem('peak_streak');
+      const savedLastOrderDate = localStorage.getItem('peak_last_order_date');
+      const savedOrderDates = localStorage.getItem('peak_order_dates');
+      const savedStreakHistory = localStorage.getItem('peak_streak_history');
 
-    if (savedStreak) setStreak(parseInt(savedStreak));
-    if (savedLastOrderDate) setLastOrderDate(savedLastOrderDate);
-    if (savedOrderDates) setOrderDates(JSON.parse(savedOrderDates));
-    if (savedStreakHistory) setStreakHistory(JSON.parse(savedStreakHistory));
+      if (savedStreak) setStreak(parseInt(savedStreak));
+      if (savedLastOrderDate) setLastOrderDate(savedLastOrderDate);
+      if (savedOrderDates) setOrderDates(JSON.parse(savedOrderDates));
+      if (savedStreakHistory) setStreakHistory(JSON.parse(savedStreakHistory));
+    }
 
     checkStreakBreak();
-  }, []);
+  }, [user]);
 
-  // Lưu vào LocalStorage
+  // Backup vào LocalStorage (fallback khi chưa login)
   useEffect(() => {
-    localStorage.setItem('peak_streak', streak);
-    if (lastOrderDate) localStorage.setItem('peak_last_order_date', lastOrderDate);
-    localStorage.setItem('peak_order_dates', JSON.stringify(orderDates));
-    localStorage.setItem('peak_streak_history', JSON.stringify(streakHistory));
-  }, [streak, lastOrderDate, orderDates, streakHistory]);
+    if (!user) {
+      localStorage.setItem('peak_streak', streak);
+      if (lastOrderDate) localStorage.setItem('peak_last_order_date', lastOrderDate);
+      localStorage.setItem('peak_order_dates', JSON.stringify(orderDates));
+      localStorage.setItem('peak_streak_history', JSON.stringify(streakHistory));
+    }
+  }, [streak, lastOrderDate, orderDates, streakHistory, user]);
 
   const isNewDay = () => {
     if (!lastOrderDate) return true;
@@ -76,7 +88,7 @@ export const StreakProvider = ({ children }) => {
     return false;
   };
 
-  const addStreak = () => {
+  const addStreak = async () => {
     const today = new Date().toISOString().split('T')[0];
     if (orderDates.includes(today)) {
       return { success: false, message: 'Bạn đã điểm danh hôm nay rồi!' };
@@ -93,10 +105,23 @@ export const StreakProvider = ({ children }) => {
       return { success: false, message: 'Bạn đã điểm danh hôm nay rồi!' };
     }
 
+    const newLastOrderDate = new Date().toISOString();
     setStreak(newStreak);
-    setLastOrderDate(new Date().toISOString());
+    setLastOrderDate(newLastOrderDate);
     setOrderDates([...orderDates, today]);
     setStreakHistory([...streakHistory, { date: today, streak: newStreak }]);
+
+    // Sync với Firestore nếu đã login
+    if (user) {
+      try {
+        await updateDocument(COLLECTIONS.USERS, user.phone, {
+          streakDays: newStreak,
+          lastOrderDate: newLastOrderDate,
+        });
+      } catch (error) {
+        console.error('❌ Error updating streak:', error);
+      }
+    }
 
     const reward = checkReward(newStreak);
     return { 

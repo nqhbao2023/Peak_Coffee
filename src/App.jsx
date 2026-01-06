@@ -1,5 +1,4 @@
 ﻿import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { MENU_DATA } from './data/menu';
 import { ArrowUp } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import toast, { Toaster } from 'react-hot-toast';
@@ -9,6 +8,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { MenuProvider, useMenu } from './contexts/MenuContext';
 import { StreakProvider, useStreak } from './contexts/StreakContext';
 import { DebtProvider } from './contexts/DebtContext';
+import { getFCMToken, setupForegroundMessaging } from './firebase/messaging.jsx';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import CategoryFilter from './components/CategoryFilter';
@@ -46,6 +46,33 @@ function AppContent() {
   const { user, isAdmin, isLoggedIn } = useAuth();
   const { menuItems, getCategories } = useMenu();
   const { addStreak } = useStreak();
+
+  // Setup Firebase Cloud Messaging cho admin
+  useEffect(() => {
+    let unsubscribe;
+
+    const initFCM = async () => {
+      // Chỉ setup FCM cho admin
+      if (isAdmin && user) {
+        console.log('🔔 Setting up FCM for admin...');
+        
+        // Request permission và lấy token
+        await getFCMToken(user.phone);
+        
+        // Setup foreground messaging listener
+        unsubscribe = setupForegroundMessaging();
+      }
+    };
+
+    initFCM();
+
+    // Cleanup
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [isAdmin, user]);
 
   // Get unique categories from dynamic menu
   const categories = useMemo(() => {
@@ -152,8 +179,8 @@ function AppContent() {
     if (streakResult.success && streakResult.reward) {
       // Có nhận reward từ streak
       if (streakResult.reward.type === 'voucher') {
-        // TODO: Thêm voucher vào LoyaltyContext
-        // Tạm thời chỉ toast
+        // Streak reward được xử lý trong StreakModal
+        // User sẽ thấy animation và claim voucher từ modal
       }
     }
 
@@ -221,11 +248,35 @@ function AppContent() {
     <div className='min-h-screen bg-stone-50 font-sans text-stone-900 pb-24 selection:bg-orange-200 selection:text-orange-900'>
       {/* Toast Container */}
       <Toaster 
+        position="bottom-center"
+        reverseOrder={false}
+        gutter={8}
+        containerStyle={{
+          bottom: 120,
+        }}
         toastOptions={{
           className: 'font-sans',
+          duration: 2000,
           style: {
-            borderRadius: '12px',
+            borderRadius: '16px',
             fontWeight: '600',
+            padding: '12px 20px',
+            fontSize: '14px',
+            maxWidth: '90vw',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            cursor: 'pointer',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
           },
         }}
       />

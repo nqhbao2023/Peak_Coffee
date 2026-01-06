@@ -18,7 +18,7 @@ const Header = ({ cartCount, onCartClick, onOrderHistoryClick, onAdminClick, onL
             </h1>
             <div className="flex items-center text-[10px] text-stone-500 font-bold uppercase tracking-widest mt-0.5">
               <MapPin size={10} className="mr-1 text-orange-500" /> 
-              <span className="truncate max-w-[120px]">Khu Cong Nghiep VSIP 1</span>
+              <span className="truncate max-w-[120px]">COFFEE VIETHOA</span>
             </div>
           </div>
         </div>

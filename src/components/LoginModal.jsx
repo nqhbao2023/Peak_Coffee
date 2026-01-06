@@ -7,7 +7,8 @@ import toast from 'react-hot-toast';
 const LoginModal = ({ isOpen, onClose }) => {
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
-  const [isRegistering, setIsRegistering] = useState(false); // true = đăng ký, false = đăng nhập
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Loading state
   const { register, login, isPhoneRegistered, getUserByPhone } = useAuth();
 
   if (!isOpen) return null;
@@ -15,15 +16,15 @@ const LoginModal = ({ isOpen, onClose }) => {
   // Kiểm tra SĐT khi user nhập xong (sau 500ms không gõ nữa)
   useEffect(() => {
     if (phone.length >= 10) {
-      const timer = setTimeout(() => {
-        const registered = isPhoneRegistered(phone);
+      const timer = setTimeout(async () => {
+        const registered = await isPhoneRegistered(phone);
         if (registered) {
           // SĐT đã đăng ký → Chế độ đăng nhập
           setIsRegistering(false);
-          const user = getUserByPhone(phone);
+          const user = await getUserByPhone(phone);
           if (user) {
             setName(''); // Clear name field
-            toast.success(`Chào lại ${user.name}! 👋`, { duration: 2000 });
+            // Không toast ở đây - chỉ toast khi submit
           }
         } else {
           // SĐT mới → Chế độ đăng ký
@@ -36,63 +37,69 @@ const LoginModal = ({ isOpen, onClose }) => {
       setIsRegistering(false);
       setName('');
     }
-  }, [phone]);
+  }, [phone, isPhoneRegistered, getUserByPhone]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Prevent double submit
+    if (isSubmitting) return;
 
     // Validate SĐT
     if (!phone.trim()) {
-      toast.error('Vui lòng nhập số điện thoại!', { icon: '📱' });
+      toast.error('Vui lòng nhập số điện thoại!');
       return;
     }
     if (phone.length < 10) {
-      toast.error('Số điện thoại phải có ít nhất 10 số!', { icon: '⚠️' });
+      toast.error('Số điện thoại phải có ít nhất 10 số!');
       return;
     }
 
-    // Nếu là đăng ký → cần tên
-    if (isRegistering) {
-      if (!name.trim()) {
-        toast.error('Vui lòng nhập tên của bạn!', { icon: '👤' });
-        return;
-      }
+    setIsSubmitting(true);
 
-      // Đăng ký
-      const result = register(phone.trim(), name.trim());
-      if (result.success) {
-        if (phone === '1111111111') {
-          toast.success(`Chào Admin ${name}! 👨‍💼`, { duration: 3000 });
-        } else {
-          toast.success(
-            <div>
-              <p className="font-bold">Đăng ký thành công! 🎉</p>
-              <p className="text-xs mt-1">Chào mừng {name} đến Peak Coffee!</p>
-            </div>,
-            { duration: 3000 }
-          );
+    try {
+      // Nếu là đăng ký → cần tên
+      if (isRegistering) {
+        if (!name.trim()) {
+          toast.error('Vui lòng nhập tên của bạn!');
+          setIsSubmitting(false);
+          return;
         }
-        onClose();
-      } else {
-        toast.error(result.message, { icon: '❌' });
-      }
-    } else {
-      // Đăng nhập
-      const result = login(phone.trim());
-      if (result.success) {
-        if (phone === '1111111111') {
-          toast.success(`Chào Admin ${result.user.name}! 👨‍💼`, { duration: 3000 });
+
+        // Đăng ký
+        const result = await register(phone.trim(), name.trim());
+        if (result.success) {
+          toast.success(`🎉 Chào mừng ${name}!`);
+          
+          // Vibration feedback
+          if (navigator.vibrate) navigator.vibrate(100);
+          
+          // Đóng modal sau khi thành công
+          setTimeout(() => onClose(), 300);
         } else {
-          toast.success(`Chào lại ${result.user.name}! 👋`, { duration: 3000 });
+          toast.error(result.message);
+          setIsSubmitting(false);
         }
-        onClose();
       } else {
-        toast.error(result.message, { icon: '❌' });
+        // Đăng nhập
+        const result = await login(phone.trim());
+        if (result.success) {
+          toast.success(`👋 Chào lại ${result.user.name}!`);
+          
+          // Vibration feedback
+          if (navigator.vibrate) navigator.vibrate(100);
+          
+          // Đóng modal sau khi thành công
+          setTimeout(() => onClose(), 300);
+        } else {
+          toast.error(result.message);
+          setIsSubmitting(false);
+        }
       }
+    } catch (error) {
+      toast.error('Lỗi không xác định. Vui lòng thử lại!');
+      setIsSubmitting(false);
     }
-
-    // Vibration feedback
-    if (navigator.vibrate) navigator.vibrate(100);
   };
 
   return (
@@ -211,20 +218,28 @@ const LoginModal = ({ isOpen, onClose }) => {
           {/* Submit Button */}
           <button
             type="submit"
+            disabled={isSubmitting}
             className={`w-full text-white py-3.5 rounded-xl font-black text-lg shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${
               isRegistering
                 ? 'bg-gradient-to-r from-blue-500 to-indigo-500 shadow-blue-300/50 hover:shadow-blue-400/50'
                 : 'bg-gradient-to-r from-orange-500 to-red-500 shadow-orange-300/50 hover:shadow-orange-400/50'
-            }`}
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
-            {isRegistering ? <UserPlus size={20} /> : <LogIn size={20} />}
-            {isRegistering ? 'ĐĂNG KÝ NGAY' : 'ĐĂNG NHẬP'}
+            {isSubmitting ? (
+              <>
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Đang xử lý...
+              </>
+            ) : (
+              <>
+                {isRegistering ? <UserPlus size={20} /> : <LogIn size={20} />}
+                {isRegistering ? 'ĐĂNG KÝ NGAY' : 'ĐĂNG NHẬP'}
+              </>
+            )}
           </button>
-
-          {/* Admin Hint */}
-          <p className="text-xs text-center text-stone-400">
-            Admin test: 1111111111
-          </p>
         </form>
       </motion.div>
     </motion.div>

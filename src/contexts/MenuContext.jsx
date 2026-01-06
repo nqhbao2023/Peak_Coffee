@@ -1,69 +1,176 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { MENU_DATA } from '../data/menu';
-import { v4 as uuidv4 } from 'uuid';
+import toast from 'react-hot-toast';
+import { 
+  COLLECTIONS, 
+  getAllDocuments, 
+  setDocument, 
+  updateDocument, 
+  deleteDocument,
+  listenToCollection,
+  seedCollection,
+} from '../firebase/firestore';
 
 const MenuContext = createContext();
 
 export const MenuProvider = ({ children }) => {
   const [menuItems, setMenuItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  // Load menu từ LocalStorage hoặc dùng default
+  // Load menu từ Firestore với realtime listener
   useEffect(() => {
-    const savedMenu = localStorage.getItem('peak_menu');
-    if (savedMenu) {
-      setMenuItems(JSON.parse(savedMenu));
-    } else {
-      // First time: Load từ MENU_DATA và thêm isAvailable
-      const initialMenu = MENU_DATA.map(item => ({
-        ...item,
-        isAvailable: true,
-        createdAt: new Date().toISOString(),
-      }));
-      setMenuItems(initialMenu);
-      localStorage.setItem('peak_menu', JSON.stringify(initialMenu));
-    }
+    let unsubscribe;
+
+    const initMenu = async () => {
+      try {
+        setIsLoading(true);
+
+        // Kiểm tra xem Firestore có data chưa
+        const firestoreMenu = await getAllDocuments(COLLECTIONS.MENU);
+        
+        if (firestoreMenu.length === 0) {
+          // Lần đầu tiên: Seed data từ MENU_DATA
+          console.log('🌱 Seeding menu data to Firestore...');
+          const initialMenu = MENU_DATA.map(item => ({
+            ...item,
+            isAvailable: true,
+            createdAt: new Date().toISOString(),
+          }));
+          
+          await seedCollection(COLLECTIONS.MENU, initialMenu);
+          toast.success('✅ Menu đã được khởi tạo!');
+        }
+
+        // Setup realtime listener
+        unsubscribe = listenToCollection(COLLECTIONS.MENU, (data) => {
+          // Sort by ID để giữ thứ tự nhất quán
+          const sortedData = data.sort((a, b) => 
+            parseInt(a.id) - parseInt(b.id)
+          );
+          setMenuItems(sortedData);
+          setIsLoading(false);
+        });
+
+      } catch (error) {
+        console.error('❌ Error initializing menu:', error);
+        toast.error('Lỗi khi tải menu. Vui lòng refresh lại!');
+        
+        // Fallback: Load từ localStorage nếu Firestore lỗi
+        const savedMenu = localStorage.getItem('peak_menu');
+        if (savedMenu) {
+          setMenuItems(JSON.parse(savedMenu));
+        } else {
+          // Last resort: Use MENU_DATA
+          const fallbackMenu = MENU_DATA.map(item => ({
+            ...item,
+            isAvailable: true,
+            createdAt: new Date().toISOString(),
+          }));
+          setMenuItems(fallbackMenu);
+        }
+        setIsLoading(false);
+      }
+    };
+
+    initMenu();
+
+    // Cleanup listener khi unmount
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, []);
 
-  // Lưu vào LocalStorage mỗi khi thay đổi
+  // Backup vào localStorage (fallback khi offline)
   useEffect(() => {
     if (menuItems.length > 0) {
       localStorage.setItem('peak_menu', JSON.stringify(menuItems));
     }
   }, [menuItems]);
 
-  // Thêm món mới
-  const addMenuItem = (item) => {
-    const newItem = {
-      ...item,
-      id: parseInt(Date.now().toString().slice(-8)), // Tạo ID unique
-      isAvailable: true,
-      createdAt: new Date().toISOString(),
-    };
-    setMenuItems(prev => [...prev, newItem]);
-    return newItem;
+  // Thêm món mới (sync với Firestore)
+  const addMenuItem = async (item) => {
+    try {
+      setIsSyncing(true);
+      const newItem = {
+        ...item,
+        id: parseInt(Date.now().toString().slice(-8)), // Tạo ID unique
+        isAvailable: true,
+        createdAt: new Date().toISOString(),
+      };
+      
+      // Save to Firestore (listener sẽ tự động update state)
+      await setDocument(COLLECTIONS.MENU, newItem.id.toString(), newItem);
+      
+      toast.success('✅ Đã thêm món mới!');
+      return newItem;
+    } catch (error) {
+      console.error('❌ Error adding menu item:', error);
+      toast.error('Lỗi khi thêm món. Vui lòng thử lại!');
+      throw error;
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
-  // Cập nhật món
-  const updateMenuItem = (id, updates) => {
-    setMenuItems(prev =>
-      prev.map(item =>
-        item.id === id ? { ...item, ...updates, updatedAt: new Date().toISOString() } : item
-      )
-    );
+  // Cập nhật món (sync với Firestore)
+  const updateMenuItem = async (id, updates) => {
+    try {
+      setIsSyncing(true);
+      await updateDocument(COLLECTIONS.MENU, id.toString(), {
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      });
+      
+      toast.success('✅ Đã cập nhật món!');
+    } catch (error) {
+      console.error('❌ Error updating menu item:', error);
+      toast.error('Lỗi khi cập nhật. Vui lòng thử lại!');
+      throw error;
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
-  // Xóa món
-  const deleteMenuItem = (id) => {
-    setMenuItems(prev => prev.filter(item => item.id !== id));
+  // Xóa món (sync với Firestore)
+  const deleteMenuItem = async (id) => {
+    try {
+      setIsSyncing(true);
+      await deleteDocument(COLLECTIONS.MENU, id.toString());
+      
+      toast.success('✅ Đã xóa món!');
+    } catch (error) {
+      console.error('❌ Error deleting menu item:', error);
+      toast.error('Lỗi khi xóa. Vui lòng thử lại!');
+      throw error;
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
-  // Toggle available
-  const toggleAvailability = (id) => {
-    setMenuItems(prev =>
-      prev.map(item =>
-        item.id === id ? { ...item, isAvailable: !item.isAvailable } : item
-      )
-    );
+  // Toggle available (sync với Firestore)
+  const toggleAvailability = async (id) => {
+    try {
+      const item = menuItems.find(i => i.id === id);
+      if (!item) return;
+      
+      setIsSyncing(true);
+      await updateDocument(COLLECTIONS.MENU, id.toString(), {
+        isAvailable: !item.isAvailable,
+      });
+      
+      // Toast thông báo
+      const message = !item.isAvailable ? 'Đã bật món' : 'Đã tắt món';
+      toast.success(`✅ ${message}: ${item.name}`);
+    } catch (error) {
+      console.error('❌ Error toggling availability:', error);
+      toast.error('Lỗi khi cập nhật. Vui lòng thử lại!');
+      throw error;
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   // Get categories
@@ -78,19 +185,33 @@ export const MenuProvider = ({ children }) => {
     return menuItems.filter(item => item.category === category);
   };
 
-  // Reset về default
-  const resetMenu = () => {
-    const defaultMenu = MENU_DATA.map(item => ({
-      ...item,
-      isAvailable: true,
-      createdAt: new Date().toISOString(),
-    }));
-    setMenuItems(defaultMenu);
-    localStorage.setItem('peak_menu', JSON.stringify(defaultMenu));
+  // Reset về default (re-seed Firestore)
+  const resetMenu = async () => {
+    try {
+      setIsSyncing(true);
+      const defaultMenu = MENU_DATA.map(item => ({
+        ...item,
+        isAvailable: true,
+        createdAt: new Date().toISOString(),
+      }));
+      
+      // Xóa hết và seed lại
+      await seedCollection(COLLECTIONS.MENU, defaultMenu);
+      
+      toast.success('✅ Đã reset menu về mặc định!');
+    } catch (error) {
+      console.error('❌ Error resetting menu:', error);
+      toast.error('Lỗi khi reset menu!');
+      throw error;
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const value = {
     menuItems,
+    isLoading,
+    isSyncing,
     addMenuItem,
     updateMenuItem,
     deleteMenuItem,

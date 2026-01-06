@@ -1,3 +1,22 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom Toast Styles - Click to dismiss */
+[data-sonner-toast],
+[data-sonner-toaster] [role="status"] {
+  cursor: pointer !important;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+[data-sonner-toast]:hover,
+[data-sonner-toaster] [role="status"]:hover {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+
+[data-sonner-toast]:active,
+[data-sonner-toaster] [role="status"]:active {
+  transform: scale(0.95);
+}
