@@ -5,11 +5,13 @@ const DebtContext = createContext();
 export const DebtProvider = ({ children }) => {
   const [customers, setCustomers] = useState([]);
   const [debtOrders, setDebtOrders] = useState([]);
+  const [transactionHistory, setTransactionHistory] = useState([]); // NEW: Lịch sử giao dịch
 
   // Load từ LocalStorage
   useEffect(() => {
     const savedCustomers = localStorage.getItem('peak_customers');
     const savedDebtOrders = localStorage.getItem('peak_debt_orders');
+    const savedHistory = localStorage.getItem('peak_transaction_history');
     
     if (savedCustomers) {
       try {
@@ -25,6 +27,13 @@ export const DebtProvider = ({ children }) => {
         console.error('Error loading debt orders:', e);
       }
     }
+    if (savedHistory) {
+      try {
+        setTransactionHistory(JSON.parse(savedHistory));
+      } catch (e) {
+        console.error('Error loading history:', e);
+      }
+    }
   }, []);
 
   // Lưu vào LocalStorage
@@ -35,6 +44,10 @@ export const DebtProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('peak_debt_orders', JSON.stringify(debtOrders));
   }, [debtOrders]);
+
+  useEffect(() => {
+    localStorage.setItem('peak_transaction_history', JSON.stringify(transactionHistory));
+  }, [transactionHistory]);
 
   // Tạo đơn hàng ghi nợ
   const createDebtOrder = (orderData) => {
@@ -56,6 +69,19 @@ export const DebtProvider = ({ children }) => {
     };
 
     setDebtOrders(prev => [newOrder, ...prev]);
+
+    // Ghi lịch sử giao dịch
+    setTransactionHistory(prev => [{
+      id: `TXN_${Date.now()}`,
+      type: 'CREATE_DEBT',
+      customerName,
+      customerPhone,
+      orderCode,
+      orderId: newOrder.id,
+      amount: total,
+      timestamp: new Date().toISOString(),
+      description: `Ghi nợ đơn #${orderCode} cho ${customerName}`
+    }, ...prev]);
 
     // Cập nhật thông tin khách hàng
     setCustomers(prev => {
@@ -123,6 +149,22 @@ export const DebtProvider = ({ children }) => {
           : o
       )
     );
+
+    // Ghi lịch sử giao dịch
+    setTransactionHistory(prev => [{
+      id: `TXN_${Date.now()}`,
+      type: isFullyPaid ? 'PAY_FULL' : 'PAY_PARTIAL',
+      customerName: order.customerName,
+      customerPhone: order.customerPhone,
+      orderCode: order.orderCode,
+      orderId: order.id,
+      amount: paymentAmount,
+      remaining: newRemaining,
+      timestamp: new Date().toISOString(),
+      description: isFullyPaid 
+        ? `Thanh toán đủ đơn #${order.orderCode} (${paymentAmount.toLocaleString()}đ)`
+        : `Thanh toán từng phần đơn #${order.orderCode} (${paymentAmount.toLocaleString()}đ, còn ${newRemaining.toLocaleString()}đ)`
+    }, ...prev]);
 
     // Cập nhật công nợ khách hàng
     setCustomers(prev =>
@@ -222,6 +264,7 @@ export const DebtProvider = ({ children }) => {
   const value = {
     customers,
     debtOrders,
+    transactionHistory,
     createDebtOrder,
     payDebt,
     payAllDebtByCustomer,

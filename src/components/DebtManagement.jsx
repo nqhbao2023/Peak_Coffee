@@ -1,32 +1,73 @@
 import React, { useState } from 'react';
-import { Search, DollarSign, Users, FileText, TrendingUp, ChevronRight, X, Check } from 'lucide-react';
+import { Search, DollarSign, Users, FileText, TrendingUp, ChevronRight, X, Check, Filter, History } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDebt } from '../contexts/DebtContext';
 import CustomerDebtDetail from './CustomerDebtDetail';
+import DebtHistory from './DebtHistory';
 
 const DebtManagement = () => {
   const { customers, getDebtStats } = useDebt();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [filterStatus, setFilterStatus] = useState('debt'); // 'debt', 'paid', 'all'
+  const [activeView, setActiveView] = useState('customers'); // 'customers' or 'history'
 
   const stats = getDebtStats();
 
-  // Filter customers
+  // Filter customers theo status và search
   const filteredCustomers = customers.filter(customer => {
-    if (!searchTerm) return customer.totalDebt > 0; // Chỉ hiển thị khách đang nợ
+    // Filter theo status
+    let statusMatch = true;
+    if (filterStatus === 'debt') {
+      statusMatch = customer.totalDebt > 0;
+    } else if (filterStatus === 'paid') {
+      statusMatch = customer.totalDebt === 0 && customer.totalPaid > 0;
+    }
+    // filterStatus === 'all' thì không filter
+
+    // Filter theo search
+    if (!searchTerm) return statusMatch;
     const search = searchTerm.toLowerCase();
-    return (
-      (customer.totalDebt > 0) &&
-      (customer.name.toLowerCase().includes(search) ||
-      customer.phone.includes(search))
+    return statusMatch && (
+      customer.name.toLowerCase().includes(search) ||
+      customer.phone.includes(search)
     );
   }).sort((a, b) => b.totalDebt - a.totalDebt); // Sắp xếp theo nợ giảm dần
 
   return (
     <div className="space-y-6">
-      {/* Header + Stats */}
-      <div>
-        <h2 className="text-2xl font-black text-stone-800 mb-4">Quản lý Công Nợ</h2>
+      {/* View Toggle */}
+      <div className="flex gap-3 border-b-2 border-stone-200">
+        <button
+          onClick={() => setActiveView('customers')}
+          className={`px-6 py-3 font-bold text-sm transition-all flex items-center gap-2 border-b-4 ${
+            activeView === 'customers'
+              ? 'border-orange-500 text-orange-600'
+              : 'border-transparent text-stone-500 hover:text-stone-700'
+          }`}
+        >
+          <Users size={18} />
+          Quản lý khách hàng
+        </button>
+        <button
+          onClick={() => setActiveView('history')}
+          className={`px-6 py-3 font-bold text-sm transition-all flex items-center gap-2 border-b-4 ${
+            activeView === 'history'
+              ? 'border-orange-500 text-orange-600'
+              : 'border-transparent text-stone-500 hover:text-stone-700'
+          }`}
+        >
+          <History size={18} />
+          Lịch sử giao dịch
+        </button>
+      </div>
+
+      {/* Content */}
+      {activeView === 'customers' ? (
+        <>
+          {/* Header + Stats */}
+          <div>
+            <h2 className="text-2xl font-black text-stone-800 mb-4">Quản lý Công Nợ</h2>
         
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -76,6 +117,43 @@ const DebtManagement = () => {
         </div>
       </div>
 
+      {/* Filter Tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <button
+          onClick={() => setFilterStatus('debt')}
+          className={`px-4 py-2 rounded-xl font-bold text-sm transition-all whitespace-nowrap flex items-center gap-2 ${
+            filterStatus === 'debt'
+              ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg'
+              : 'bg-white text-stone-600 hover:bg-stone-100 border-2 border-stone-200'
+          }`}
+        >
+          <Filter size={16} />
+          Đang nợ
+        </button>
+        <button
+          onClick={() => setFilterStatus('paid')}
+          className={`px-4 py-2 rounded-xl font-bold text-sm transition-all whitespace-nowrap flex items-center gap-2 ${
+            filterStatus === 'paid'
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+              : 'bg-white text-stone-600 hover:bg-stone-100 border-2 border-stone-200'
+          }`}
+        >
+          <Check size={16} />
+          Đã trả hết
+        </button>
+        <button
+          onClick={() => setFilterStatus('all')}
+          className={`px-4 py-2 rounded-xl font-bold text-sm transition-all whitespace-nowrap flex items-center gap-2 ${
+            filterStatus === 'all'
+              ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg'
+              : 'bg-white text-stone-600 hover:bg-stone-100 border-2 border-stone-200'
+          }`}
+        >
+          <Users size={16} />
+          Tất cả ({customers.length})
+        </button>
+      </div>
+
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={20} />
@@ -111,19 +189,30 @@ const DebtManagement = () => {
                   {/* Name + Phone */}
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-black text-stone-800 truncate">{customer.name}</h3>
-                    {customer.totalDebt > 50000 && (
+                    {customer.totalDebt === 0 && customer.totalPaid > 0 ? (
+                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded flex items-center gap-1">
+                        <Check size={10} />
+                        Đã trả hết
+                      </span>
+                    ) : customer.totalDebt > 50000 ? (
                       <span className="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold rounded">
                         Nợ cao
                       </span>
-                    )}
+                    ) : null}
                   </div>
                   <p className="text-xs text-stone-500 mb-2">📞 {customer.phone}</p>
 
                   {/* Stats */}
                   <div className="flex items-center gap-3 text-xs">
-                    <span className="font-bold text-red-600">
-                      💰 {customer.totalDebt.toLocaleString()}đ
-                    </span>
+                    {customer.totalDebt > 0 ? (
+                      <span className="font-bold text-red-600">
+                        💰 Còn nợ: {customer.totalDebt.toLocaleString()}đ
+                      </span>
+                    ) : (
+                      <span className="font-bold text-green-600">
+                        ✅ Không còn nợ
+                      </span>
+                    )}
                     <span className="text-stone-400">•</span>
                     <span className="text-stone-600">
                       {customer.orderCount} đơn
@@ -156,6 +245,10 @@ const DebtManagement = () => {
           />
         )}
       </AnimatePresence>
+        </>
+      ) : (
+        <DebtHistory />
+      )}
     </div>
   );
 };
