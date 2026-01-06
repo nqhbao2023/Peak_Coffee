@@ -1,22 +1,65 @@
 import React, { useState } from 'react';
-import { X, Trash2, Minus, Plus, ShoppingBag, Gift, Sparkles } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { X, Trash2, Minus, Plus, ShoppingBag, Gift, Sparkles, TrendingUp, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useLoyalty } from '../contexts/LoyaltyContext';
 
 const CartModal = ({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem, onCheckout }) => {
-  // if (!isOpen) return null; // Handled by AnimatePresence in App.jsx
   const { vouchers } = useLoyalty();
   const [useVoucher, setUseVoucher] = useState(false);
 
+  // ============ DYNAMIC COMBO LOGIC ============
+  const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  
+  // Tính subtotal
   const subtotal = cartItems.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
   
-  // Tìm món đắt nhất để miễn phí khi dùng voucher
+  // Logic giảm giá động theo số lượng (giảm giá cố định để tránh lỗ)
+  let comboDiscount = 0;
+  let comboType = null;
+  
+  if (totalQuantity >= 5) {
+    // 5+ ly → giảm 10k
+    comboDiscount = 10000;
+    comboType = { name: 'Combo Đội Nhóm', amount: '10K', icon: '☕☕☕☕☕' };
+  } else if (totalQuantity >= 3) {
+    // 3-4 ly → giảm 5k
+    comboDiscount = 5000;
+    comboType = { name: 'Combo Nhóm Nhỏ', amount: '5K', icon: '☕☕☕' };
+  }
+
+  // Voucher discount (món đắt nhất miễn phí)
   const mostExpensiveItem = cartItems.length > 0 
     ? Math.max(...cartItems.map(item => item.finalPrice))
     : 0;
+  const voucherDiscount = useVoucher && vouchers > 0 ? mostExpensiveItem : 0;
   
-  const discount = useVoucher && vouchers > 0 ? mostExpensiveItem : 0;
-  const total = subtotal - discount;
+  // Tổng discount
+  const totalDiscount = comboDiscount + voucherDiscount;
+  const total = subtotal - totalDiscount;
+
+  // Gợi ý thêm món để đạt combo tiếp theo
+  const getComboSuggestion = () => {
+    if (totalQuantity === 0) return null;
+    if (totalQuantity === 1 || totalQuantity === 2) {
+      const needed = 3 - totalQuantity;
+      return { 
+        text: `Thêm ${needed} ly nữa để được giảm 5K!`, 
+        nextDiscount: 5000,
+        icon: '💡'
+      };
+    }
+    if (totalQuantity === 3 || totalQuantity === 4) {
+      const needed = 5 - totalQuantity;
+      return { 
+        text: `Thêm ${needed} ly nữa để được giảm 10K!`, 
+        nextDiscount: 10000,
+        icon: '🔥'
+      };
+    }
+    return null;
+  };
+
+  const comboSuggestion = getComboSuggestion();
 
   return (
     <motion.div 
@@ -130,26 +173,77 @@ const CartModal = ({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem,
         {/* Footer */}
         {cartItems.length > 0 && (
           <div className="p-5 bg-white border-t border-stone-200 rounded-b-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+            
+            {/* Combo Đang Được Áp Dụng */}
+            {comboType && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="mb-4 p-4 bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-400 rounded-2xl"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl">{comboType.icon}</div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Zap className="text-orange-600 fill-orange-600" size={18} />
+                      <span className="font-black text-orange-800 text-sm">{comboType.name}</span>
+                    </div>amount}
+                    <p className="text-xs text-orange-700 font-bold mt-1">
+                      🎉 Giảm {comboType.percent}% • Tiết kiệm {comboDiscount.toLocaleString()}đ
+                    </p>
+                  </div>
+                  <Sparkles className="text-orange-600 fill-orange-600" size={24} />
+                </div>
+              </motion.div>
+            )}
+
+            {/* Gợi Ý Thêm Món */}
+            {comboSuggestion && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{comboSuggestion.icon}</span>
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-blue-800">
+                      {comboSuggestion.text}
+                    </p>
+                    <p className="text-[10px] text-blue-600 mt-0.5">
+                      Tiết kiệm thêm ~{comboSuggestion.nextDiscount.toLocaleString()}đ
+                    </p>
+                  </div>
+                  <button 
+                    onClick={onClose}
+                    className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-700 transition-colors"
+                  >
+                    Thêm món
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
             {/* Voucher Checkbox */}
             {vouchers > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-4 p-3 bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-200 rounded-xl"
+                className="mb-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl"
               >
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={useVoucher}
                     onChange={(e) => setUseVoucher(e.target.checked)}
-                    className="w-5 h-5 accent-orange-500 cursor-pointer"
+                    className="w-5 h-5 accent-green-600 cursor-pointer"
                   />
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <Gift className="text-orange-600 fill-orange-600" size={18} />
-                      <span className="font-black text-stone-800 text-sm">Dùng voucher miễn phí</span>
+                      <Gift className="text-green-700 fill-green-700" size={18} />
+                      <span className="font-black text-green-900 text-sm">Dùng voucher miễn phí</span>
                     </div>
-                    <p className="text-xs text-orange-600 font-bold mt-0.5">
+                    <p className="text-xs text-green-700 font-bold mt-0.5">
                       Giảm {mostExpensiveItem.toLocaleString()}đ • Còn {vouchers} voucher
                     </p>
                   </div>
@@ -159,7 +253,7 @@ const CartModal = ({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem,
                       animate={{ scale: 1, rotate: 0 }}
                       transition={{ type: 'spring', stiffness: 300 }}
                     >
-                      <Sparkles className="text-orange-600 fill-orange-600" size={24} />
+                      <Sparkles className="text-green-700 fill-green-700" size={24} />
                     </motion.div>
                   )}
                 </label>
@@ -173,25 +267,55 @@ const CartModal = ({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem,
                 <span className="font-bold text-stone-700">{subtotal.toLocaleString()}đ</span>
               </div>
               
-              {useVoucher && discount > 0 && (
+              {/* Combo Discount */}
+              {comboDiscount > 0 && (
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   className="flex justify-between items-center text-sm"
                 >
                   <span className="text-orange-600 font-bold flex items-center gap-1">
-                    <Gift size={14} />
-                    Voucher giảm giá
+                    <Zap size={14} fill="currentColor" />
+                    Giảm giá combo {comboType?.amount}
                   </span>
-                  <span className="font-bold text-orange-600">-{discount.toLocaleString()}đ</span>
+                  <span className="font-bold text-orange-600">-{comboDiscount.toLocaleString()}đ</span>
                 </motion.div>
               )}
 
+              {/* Voucher Discount */}
+              {useVoucher && voucherDiscount > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="flex justify-between items-center text-sm"
+                >
+                  <span className="text-green-700 font-bold flex items-center gap-1">
+                    <Gift size={14} />
+                    Voucher miễn phí
+                  </span>
+                  <span className="font-bold text-green-700">-{voucherDiscount.toLocaleString()}đ</span>
+                </motion.div>
+              )}
+
+              {/* Total */}
               <div className="flex justify-between items-center pt-2 border-t border-stone-200">
                 <span className="text-stone-800 font-black">Tổng cộng</span>
-                <span className="text-2xl font-black text-stone-800">
-                  {total.toLocaleString()} <span className="text-sm text-stone-500 font-bold">đ</span>
-                </span>
+                <div className="text-right">
+                  {totalDiscount > 0 && (
+                    <div className="text-xs text-stone-400 line-through">
+                      {subtotal.toLocaleString()}đ
+                    </div>
+                  )}
+                  <span className="text-2xl font-black text-stone-800">
+                    {total.toLocaleString()} <span className="text-sm text-stone-500 font-bold">đ</span>
+                  </span>
+                  {totalDiscount > 0 && (
+                    <div className="text-xs text-green-600 font-bold flex items-center justify-end gap-1 mt-0.5">
+                      <TrendingUp size={12} />
+                      Tiết kiệm {totalDiscount.toLocaleString()}đ
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

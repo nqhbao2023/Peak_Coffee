@@ -1,6 +1,5 @@
 ﻿import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { MENU_DATA } from './data/menu';
-import { COMBOS } from './data/combos';
 import { ArrowUp } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import toast, { Toaster } from 'react-hot-toast';
@@ -13,7 +12,6 @@ import Header from './components/Header';
 import Hero from './components/Hero';
 import CategoryFilter from './components/CategoryFilter';
 import MenuItem from './components/MenuItem';
-import ComboCard from './components/ComboCard';
 import BottomNav from './components/BottomNav';
 import CartModal from './components/CartModal';
 import ProductModal from './components/ProductModal';
@@ -48,18 +46,13 @@ function AppContent() {
   const { menuItems, getCategories } = useMenu();
   const { addStreak } = useStreak();
 
-  // Get unique categories from dynamic menu + Combo
+  // Get unique categories from dynamic menu
   const categories = useMemo(() => {
-    const menuCategories = getCategories();
-    // Thêm "Combo" vào đầu danh sách
-    return ['Combo', ...menuCategories];
+    return getCategories();
   }, [menuItems]);
 
-  // Filter menu items from dynamic menu + combos
+  // Filter menu items from dynamic menu
   const filteredMenu = useMemo(() => {
-    if (activeCategory === 'Combo') {
-      return COMBOS.filter(combo => combo.isAvailable);
-    }
     const availableItems = menuItems.filter(item => item.isAvailable);
     if (activeCategory === 'Tất cả') return availableItems;
     return availableItems.filter(item => item.category === activeCategory);
@@ -264,17 +257,7 @@ function AppContent() {
         </div>
         
         {/* Grid layout */}
-        {activeCategory === 'Combo' ? (
-          <div className='grid gap-4'>
-            {filteredMenu.map((combo) => (
-              <ComboCard 
-                key={combo.id} 
-                combo={combo} 
-                onAddToCart={addToCart}
-              />
-            ))}
-          </div>
-        ) : activeCategory === 'Nước Ngọt' ? (
+        {activeCategory === 'Nước Ngọt' ? (
           <div className='grid grid-cols-1 gap-3'>
             {filteredMenu.map((item) => (
               <MenuItem 
