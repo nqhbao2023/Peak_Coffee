@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
-import { X, Package, Clock, CheckCircle, Coffee, Trash2, Search, Menu as MenuIcon, BarChart3, Settings } from 'lucide-react';
+import { X, Package, Clock, CheckCircle, Coffee, Trash2, Search, Menu as MenuIcon, BarChart3, Settings, DollarSign } from 'lucide-react';
 import { useOrders } from '../contexts/OrderContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import MenuManager from './MenuManager';
 import StatsOverview from './StatsOverview';
 import FeedbackList from './FeedbackList';
+import DebtManagement from './DebtManagement';
 
 const AdminDashboard = ({ isOpen, onClose }) => {
   const { orders, updateOrderStatus, deleteOrder } = useOrders();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('orders'); // orders, menu, stats, settings
+  const [activeTab, setActiveTab] = useState('orders'); // orders, menu, stats, debt, settings
 
   if (!isOpen) return null;
 
@@ -197,6 +198,7 @@ const AdminDashboard = ({ isOpen, onClose }) => {
                 {activeTab === 'orders' && 'Quản lý đơn hàng realtime'}
                 {activeTab === 'menu' && 'Quản lý menu & món ăn'}
                 {activeTab === 'stats' && 'Thống kê & báo cáo'}
+                {activeTab === 'debt' && 'Quản lý công nợ khách hàng'}
                 {activeTab === 'settings' && 'Cài đặt hệ thống'}
               </p>
             </div>
@@ -242,6 +244,17 @@ const AdminDashboard = ({ isOpen, onClose }) => {
             >
               <BarChart3 size={18} />
               Thống kê
+            </button>
+            <button
+              onClick={() => setActiveTab('debt')}
+              className={`px-4 py-2 rounded-xl font-bold text-sm transition-all whitespace-nowrap flex items-center gap-2 ${
+                activeTab === 'debt'
+                  ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg'
+                  : 'bg-white text-stone-600 hover:bg-stone-100'
+              }`}
+            >
+              <DollarSign size={18} />
+              Công nợ
             </button>
             <button
               onClick={() => setActiveTab('settings')}
@@ -320,6 +333,8 @@ const AdminDashboard = ({ isOpen, onClose }) => {
           {activeTab === 'menu' && <MenuManager />}
           
           {activeTab === 'stats' && <StatsOverview />}
+          
+          {activeTab === 'debt' && <DebtManagement />}
           
           {activeTab === 'settings' && (
             <div className="space-y-6">

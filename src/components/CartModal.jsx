@@ -1,65 +1,45 @@
 import React, { useState } from 'react';
-import { X, Trash2, Minus, Plus, ShoppingBag, Gift, Sparkles, TrendingUp, Zap } from 'lucide-react';
+import { X, Trash2, Minus, Plus, ShoppingBag, Gift, Sparkles, TrendingUp, Zap, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLoyalty } from '../contexts/LoyaltyContext';
+import { useMenu } from '../contexts/MenuContext';
+import { getSuggestions, calculateTotal } from '../utils/suggestionEngine';
 
-const CartModal = ({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem, onCheckout }) => {
+const CartModal = ({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem, onCheckout, onAddItem }) => {
   const { vouchers } = useLoyalty();
+  const { menuItems } = useMenu();
   const [useVoucher, setUseVoucher] = useState(false);
+  const [isSuggestionExpanded, setIsSuggestionExpanded] = useState(false); // State cho expand/collapse
 
-  // ============ DYNAMIC COMBO LOGIC ============
-  const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  
-  // Tính subtotal
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
-  
-  // Logic giảm giá động theo số lượng (giảm giá cố định để tránh lỗ)
-  let comboDiscount = 0;
-  let comboType = null;
-  
-  if (totalQuantity >= 5) {
-    // 5+ ly → giảm 10k
-    comboDiscount = 10000;
-    comboType = { name: 'Combo Đội Nhóm', amount: '10K', icon: '☕☕☕☕☕' };
-  } else if (totalQuantity >= 3) {
-    // 3-4 ly → giảm 5k
-    comboDiscount = 5000;
-    comboType = { name: 'Combo Nhóm Nhỏ', amount: '5K', icon: '☕☕☕' };
-  }
+  // ============ HỆ THỐNG GỢI Ý THÔNG MINH ============
+  const suggestionData = getSuggestions(cartItems, menuItems);
+  const { currentTier, nextTier, itemsNeeded, suggestions } = suggestionData;
 
-  // Voucher discount (món đắt nhất miễn phí)
-  const mostExpensiveItem = cartItems.length > 0 
-    ? Math.max(...cartItems.map(item => item.finalPrice))
+  // Tính toán giá trị - Guard cho empty cart
+  const mostExpensiveItem = cartItems && cartItems.length > 0 
+    ? Math.max(...cartItems.map(item => item?.finalPrice || 0).filter(price => price > 0))
     : 0;
-  const voucherDiscount = useVoucher && vouchers > 0 ? mostExpensiveItem : 0;
   
-  // Tổng discount
-  const totalDiscount = comboDiscount + voucherDiscount;
-  const total = subtotal - totalDiscount;
+  const { subtotal, tierDiscount, voucherDiscount, totalDiscount, total } = calculateTotal(
+    cartItems,
+    useVoucher && vouchers > 0,
+    mostExpensiveItem
+  );
 
-  // Gợi ý thêm món để đạt combo tiếp theo
-  const getComboSuggestion = () => {
-    if (totalQuantity === 0) return null;
-    if (totalQuantity === 1 || totalQuantity === 2) {
-      const needed = 3 - totalQuantity;
-      return { 
-        text: `Thêm ${needed} ly nữa để được giảm 5K!`, 
-        nextDiscount: 5000,
-        icon: '💡'
-      };
-    }
-    if (totalQuantity === 3 || totalQuantity === 4) {
-      const needed = 5 - totalQuantity;
-      return { 
-        text: `Thêm ${needed} ly nữa để được giảm 10K!`, 
-        nextDiscount: 10000,
-        icon: '🔥'
-      };
-    }
-    return null;
+  // Handler: Thêm món gợi ý vào giỏ
+  const handleAddSuggestion = (item) => {
+    if (!item || !item.id || !item.price || !onAddItem) return; // Guard
+    
+    const cartItem = {
+      ...item,
+      cartId: `${item.id}_${Date.now()}`,
+      finalPrice: item.price,
+      displayName: item.name,
+      quantity: 1,
+      options: {} // Thêm options mặc định
+    };
+    onAddItem(cartItem);
   };
-
-  const comboSuggestion = getComboSuggestion();
 
   return (
     <motion.div 
@@ -174,53 +154,141 @@ const CartModal = ({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem,
         {cartItems.length > 0 && (
           <div className="p-5 bg-white border-t border-stone-200 rounded-b-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
             
-            {/* Combo Đang Được Áp Dụng */}
-            {comboType && (
+            {/* Combo Đang Được Áp Dụng - COMPACT */}
+            {currentTier && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="mb-4 p-4 bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-400 rounded-2xl"
+                className="mb-3 p-3 bg-gradient-to-r from-orange-400 to-red-400 rounded-xl shadow-md"
               >
-                <div className="flex items-center gap-3">
-                  <div className="text-3xl">{comboType.icon}</div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                    <span className="text-2xl">{currentTier.icon}</span>
+                  </div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <Zap className="text-orange-600 fill-orange-600" size={18} />
-                      <span className="font-black text-orange-800 text-sm">{comboType.name}</span>
-                    </div>amount}
-                    <p className="text-xs text-orange-700 font-bold mt-1">
-                      🎉 Giảm {comboType.percent}% • Tiết kiệm {comboDiscount.toLocaleString()}đ
+                    <div className="flex items-center gap-1.5">
+                      <Zap className="text-white fill-white" size={14} />
+                      <span className="font-black text-white text-xs">{currentTier.name}</span>
+                    </div>
+                    <p className="text-[10px] text-orange-50 font-bold mt-0.5">
+                      Tiết kiệm {currentTier.discount.toLocaleString()}đ
                     </p>
                   </div>
-                  <Sparkles className="text-orange-600 fill-orange-600" size={24} />
+                  <Sparkles className="text-white fill-white" size={18} />
                 </div>
               </motion.div>
             )}
 
-            {/* Gợi Ý Thêm Món */}
-            {comboSuggestion && (
+            {/* GỢI Ý THÔNG MINH - COLLAPSIBLE (MỚI) */}
+            {suggestions.length > 0 && nextTier && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl"
+                className="mb-3"
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{comboSuggestion.icon}</span>
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-blue-800">
-                      {comboSuggestion.text}
+                {/* COMPACT HEADER - Luôn hiển thị */}
+                <motion.button
+                  onClick={() => setIsSuggestionExpanded(!isSuggestionExpanded)}
+                  className="w-full p-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98] flex items-center gap-3"
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {/* Icon + Badge */}
+                  <div className="relative">
+                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                      <span className="text-xl">{nextTier.icon}</span>
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center border-2 border-white">
+                      <span className="text-white text-[10px] font-black">{itemsNeeded}</span>
+                    </div>
+                  </div>
+
+                  {/* Text */}
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-black text-sm leading-tight">
+                      Thêm {itemsNeeded} món giảm {nextTier.discount.toLocaleString()}đ
                     </p>
-                    <p className="text-[10px] text-blue-600 mt-0.5">
-                      Tiết kiệm thêm ~{comboSuggestion.nextDiscount.toLocaleString()}đ
+                    <p className="text-blue-100 text-[10px] font-semibold mt-0.5">
+                      {isSuggestionExpanded ? 'Thu gọn' : `${suggestions.length} món gợi ý cho bạn`}
                     </p>
                   </div>
-                  <button 
-                    onClick={onClose}
-                    className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-700 transition-colors"
+
+                  {/* Arrow Icon */}
+                  <motion.div
+                    animate={{ rotate: isSuggestionExpanded ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="text-white"
                   >
-                    Thêm món
-                  </button>
-                </div>
+                    <ChevronDown size={20} strokeWidth={3} />
+                  </motion.div>
+                </motion.button>
+
+                {/* EXPANDED CONTENT - Chỉ hiển thị khi expand */}
+                <AnimatePresence>
+                  {isSuggestionExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-2 bg-blue-50 rounded-xl border-2 border-blue-200 p-3 space-y-2">
+                        {/* Danh sách món gợi ý */}
+                        {suggestions.map((item, index) => (
+                          <motion.button
+                            key={item.id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={() => {
+                              handleAddSuggestion(item);
+                              setIsSuggestionExpanded(false); // Auto collapse sau khi thêm
+                            }}
+                            className="w-full flex items-center gap-2.5 bg-white p-2.5 rounded-xl border border-blue-200 hover:border-blue-400 hover:shadow-md transition-all"
+                          >
+                            {/* Hình ảnh nhỏ gọn hơn */}
+                            <img 
+                              src={item.image} 
+                              alt={item.name}
+                              className="w-12 h-12 rounded-lg object-cover bg-stone-100"
+                            />
+                            
+                            {/* Thông tin */}
+                            <div className="flex-1 text-left min-w-0">
+                              <h4 className="font-bold text-stone-800 text-xs line-clamp-1">
+                                {item.name}
+                              </h4>
+                              <p className="text-[9px] text-blue-600 font-semibold mt-0.5 line-clamp-1">
+                                {item.reason}
+                              </p>
+                              <span className="text-xs font-black text-orange-600">
+                                {item.price.toLocaleString()}đ
+                              </span>
+                            </div>
+
+                            {/* Icon thêm nhỏ hơn */}
+                            <div className="flex-shrink-0 w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center">
+                              <Plus className="text-white" size={16} />
+                            </div>
+                          </motion.button>
+                        ))}
+
+                        {/* Footer - Chọn món khác */}
+                        <button
+                          onClick={() => {
+                            setIsSuggestionExpanded(false);
+                            onClose();
+                          }}
+                          className="w-full py-2 bg-blue-100 hover:bg-blue-200 transition-colors rounded-lg flex items-center justify-center gap-1 text-[10px] font-bold text-blue-700 mt-2"
+                        >
+                          <span>Hoặc chọn món khác trong menu</span>
+                          <ChevronRight size={12} />
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             )}
 
@@ -267,8 +335,8 @@ const CartModal = ({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem,
                 <span className="font-bold text-stone-700">{subtotal.toLocaleString()}đ</span>
               </div>
               
-              {/* Combo Discount */}
-              {comboDiscount > 0 && (
+              {/* Tier Discount */}
+              {tierDiscount > 0 && (
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -276,9 +344,9 @@ const CartModal = ({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem,
                 >
                   <span className="text-orange-600 font-bold flex items-center gap-1">
                     <Zap size={14} fill="currentColor" />
-                    Giảm giá combo {comboType?.amount}
+                    Giảm giá {currentTier?.name}
                   </span>
-                  <span className="font-bold text-orange-600">-{comboDiscount.toLocaleString()}đ</span>
+                  <span className="font-bold text-orange-600">-{tierDiscount.toLocaleString()}đ</span>
                 </motion.div>
               )}
 

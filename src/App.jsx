@@ -8,6 +8,7 @@ import { OrderProvider, useOrders } from './contexts/OrderContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { MenuProvider, useMenu } from './contexts/MenuContext';
 import { StreakProvider, useStreak } from './contexts/StreakContext';
+import { DebtProvider } from './contexts/DebtContext';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import CategoryFilter from './components/CategoryFilter';
@@ -310,6 +311,7 @@ function AppContent() {
             onUpdateQuantity={updateQuantity}
             onRemoveItem={removeFromCart}
             onCheckout={handleCheckout}
+            onAddItem={addToCart}
           />
         )}
       </AnimatePresence>
@@ -334,6 +336,7 @@ function AppContent() {
             onClose={() => setIsPaymentOpen(false)}
             total={totalForPayment}
             orderCode={orderCodeForPayment}
+            cartItems={cartItems}
             onConfirm={handlePaymentConfirm}
           />
         )}
@@ -400,7 +403,9 @@ function App() {
         <LoyaltyProvider>
           <OrderProvider>
             <StreakProvider>
-              <AppContent />
+              <DebtProvider>
+                <AppContent />
+              </DebtProvider>
             </StreakProvider>
           </OrderProvider>
         </LoyaltyProvider>

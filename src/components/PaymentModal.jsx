@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
-import { X, CreditCard, Banknote, QrCode, Copy, Check, Smartphone, ArrowRight, Sparkles } from 'lucide-react';
+import { X, CreditCard, Banknote, QrCode, Copy, Check, Smartphone, ArrowRight, Sparkles, Clock, User, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useDebt } from '../contexts/DebtContext';
+import toast from 'react-hot-toast';
 
-const PaymentModal = ({ isOpen, onClose, total, orderCode, onConfirm }) => {
-  const [paymentMethod, setPaymentMethod] = useState('qr'); // 'qr' hoặc 'cash'
+const PaymentModal = ({ isOpen, onClose, total, orderCode, onConfirm, cartItems }) => {
+  const [paymentMethod, setPaymentMethod] = useState('qr'); // 'qr', 'cash', 'debt'
   const [copied, setCopied] = useState(false);
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const { createDebtOrder } = useDebt();
 
   if (!isOpen) return null;
 
@@ -29,7 +34,35 @@ const PaymentModal = ({ isOpen, onClose, total, orderCode, onConfirm }) => {
   };
 
   const handleConfirm = () => {
-    onConfirm(paymentMethod);
+    if (paymentMethod === 'debt') {
+      // Validate customer info
+      if (!customerName.trim() || !customerPhone.trim()) {
+        toast.error('Vui lòng nhập đầy đủ thông tin khách hàng');
+        return;
+      }
+      
+      // Validate phone number (basic)
+      if (customerPhone.length < 10) {
+        toast.error('Số điện thoại không hợp lệ');
+        return;
+      }
+
+      // Create debt order
+      const debtOrder = createDebtOrder({
+        orderCode,
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+        items: cartItems || [],
+        total
+      });
+
+      if (debtOrder) {
+        toast.success(`✅ Đã ghi nợ cho ${customerName}!`);
+        onConfirm('debt');
+      }
+    } else {
+      onConfirm(paymentMethod);
+    }
   };
 
   return (
@@ -138,6 +171,36 @@ const PaymentModal = ({ isOpen, onClose, total, orderCode, onConfirm }) => {
                   </motion.div>
                 )}
               </button>
+
+              <button
+                onClick={() => setPaymentMethod('debt')}
+                className={`w-full p-4 rounded-2xl border-2 flex items-center justify-between transition-all duration-300 ${
+                  paymentMethod === 'debt' 
+                    ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-cyan-50 shadow-lg shadow-blue-200/50 scale-[1.02]' 
+                    : 'border-stone-200 bg-white hover:border-stone-300'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    paymentMethod === 'debt' ? 'bg-blue-500' : 'bg-stone-100'
+                  }`}>
+                    <Clock className={paymentMethod === 'debt' ? 'text-white' : 'text-stone-500'} size={24} />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-black text-stone-800">Ghi nợ</p>
+                    <p className="text-xs text-stone-500">Thanh toán sau (khách quen)</p>
+                  </div>
+                </div>
+                {paymentMethod === 'debt' && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center"
+                  >
+                    <Check size={16} className="text-white" />
+                  </motion.div>
+                )}
+              </button>
             </div>
 
             {/* QR Code Section */}
@@ -225,6 +288,50 @@ const PaymentModal = ({ isOpen, onClose, total, orderCode, onConfirm }) => {
                   <p className="text-sm text-stone-600 leading-relaxed">
                     Vui lòng chuẩn bị <span className="font-black text-green-600">{total.toLocaleString()}đ</span> tiền mặt để thanh toán khi nhận hàng.
                   </p>
+                </motion.div>
+              )}
+
+              {paymentMethod === 'debt' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="border-2 border-blue-200 rounded-3xl p-6 bg-gradient-to-br from-blue-50 to-cyan-50"
+                >
+                  <div className="w-20 h-20 bg-blue-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <Clock size={40} className="text-white" />
+                  </div>
+                  <h3 className="font-black text-xl text-stone-800 mb-4 text-center">Thông tin khách hàng</h3>
+                  
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-500" size={20} />
+                      <input
+                        type="text"
+                        placeholder="Họ tên khách hàng *"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-blue-200 focus:border-blue-500 focus:outline-none font-semibold text-stone-800"
+                      />
+                    </div>
+                    
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-500" size={20} />
+                      <input
+                        type="tel"
+                        placeholder="Số điện thoại *"
+                        value={customerPhone}
+                        onChange={(e) => setCustomerPhone(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-blue-200 focus:border-blue-500 focus:outline-none font-semibold text-stone-800"
+                      />
+                    </div>
+
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mt-4">
+                      <p className="text-xs text-stone-600 leading-relaxed">
+                        <span className="font-bold text-stone-800">Lưu ý:</span> Đơn hàng sẽ được ghi nợ và khách hàng có thể thanh toán sau.
+                      </p>
+                    </div>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
