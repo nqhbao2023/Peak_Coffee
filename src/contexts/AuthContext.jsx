@@ -10,7 +10,7 @@ import {
 const AuthContext = createContext();
 
 // Admin phone number (có thể thay đổi)
-const ADMIN_PHONE = '1111111111';
+const ADMIN_PHONE = '0982349213';
 
 // LocalStorage key cho current user (để auto-login)
 const USER_KEY = 'peak_user';

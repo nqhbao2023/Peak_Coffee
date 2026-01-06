@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 
 const CategoryFilter = ({ categories, activeCategory, onSelectCategory }) => {
   return (
@@ -10,21 +9,14 @@ const CategoryFilter = ({ categories, activeCategory, onSelectCategory }) => {
             key={category} 
             onClick={() => onSelectCategory(category)}
             className={`
-              relative px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors snap-start
+              px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap snap-start
+              transition-all duration-200 ease-out
               ${activeCategory === category 
-                ? 'text-white' 
-                : 'text-stone-500 hover:bg-stone-100'}
+                ? 'bg-stone-900 text-white shadow-lg scale-105' 
+                : 'bg-stone-100 text-stone-500 hover:bg-stone-200 active:scale-95'}
             `}
           >
-            {activeCategory === category && (
-              <motion.div
-                layoutId="activeCategory"
-                className="absolute inset-0 bg-stone-900 rounded-full shadow-lg shadow-stone-200"
-                initial={false}
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              />
-            )}
-            <span className="relative z-10">{category}</span>
+            {category}
           </button>
         ))}
       </div>

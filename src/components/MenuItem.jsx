@@ -1,6 +1,5 @@
 import React from 'react';
 import { Plus, Flame, Snowflake } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 const MenuItem = ({ item, onAddToCart, onOpenModal }) => {
   // Neu la mon "quick add" (nuoc ngot) -> them thang vao gio
@@ -21,12 +20,9 @@ const MenuItem = ({ item, onAddToCart, onOpenModal }) => {
   // Layout compact cho nuoc ngot
   if (item.isQuickAdd) {
     return (
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-50px" }}
+      <div 
         onClick={handleClick}
-        className="group bg-white p-3 rounded-2xl flex items-center gap-3 shadow-sm hover:shadow-md border border-stone-100 transition-all active:scale-[0.98] cursor-pointer"
+        className="group bg-white p-3 rounded-2xl flex items-center gap-3 shadow-sm hover:shadow-md border border-stone-100 transition-all duration-200 active:scale-[0.98] cursor-pointer"
       >
         <div className="relative overflow-hidden rounded-xl w-16 h-16 shrink-0 bg-stone-100">
           <img 
@@ -47,18 +43,15 @@ const MenuItem = ({ item, onAddToCart, onOpenModal }) => {
         <button className="bg-stone-900 text-white w-9 h-9 rounded-xl flex items-center justify-center hover:bg-orange-600 transition-colors shadow-md shrink-0">
           <Plus size={18} strokeWidth={3} />
         </button>
-      </motion.div>
+      </div>
     );
   }
 
   // Layout day du cho cac mon khac
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-50px" }}
+    <div 
       onClick={handleClick}
-      className="group bg-white p-3 rounded-2xl flex gap-4 shadow-sm hover:shadow-md border border-stone-100 transition-all active:scale-[0.99] cursor-pointer"
+      className="group bg-white p-3 rounded-2xl flex gap-4 shadow-sm hover:shadow-md border border-stone-100 transition-all duration-200 active:scale-[0.99] cursor-pointer"
     >
       <div className="relative overflow-hidden rounded-xl w-28 h-28 shrink-0 bg-stone-100">
         <img 
@@ -112,7 +105,7 @@ const MenuItem = ({ item, onAddToCart, onOpenModal }) => {
           </button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
