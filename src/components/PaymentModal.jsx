@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { X, CreditCard, Banknote, QrCode, Copy, Check, Smartphone, ArrowRight, Sparkles, Clock, User, Phone } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, CreditCard, Banknote, QrCode, Copy, Check, Smartphone, ArrowRight, Sparkles, Clock, User, Phone, Edit2, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDebt } from '../contexts/DebtContext';
+import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 const PaymentModal = ({ isOpen, onClose, total, orderCode, onConfirm, cartItems }) => {
@@ -9,7 +10,18 @@ const PaymentModal = ({ isOpen, onClose, total, orderCode, onConfirm, cartItems 
   const [copied, setCopied] = useState(false);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [isEditingDebtInfo, setIsEditingDebtInfo] = useState(false); // Cho phép chỉnh sửa nếu mua hộ
   const { createDebtOrder } = useDebt();
+  const { user } = useAuth();
+
+  // Auto-fill thông tin từ user đăng nhập khi chọn ghi nợ
+  useEffect(() => {
+    if (paymentMethod === 'debt' && user) {
+      setCustomerName(user.name || '');
+      setCustomerPhone(user.phone || '');
+      setIsEditingDebtInfo(false); // Reset edit mode
+    }
+  }, [paymentMethod, user]);
 
   if (!isOpen) return null;
 
@@ -35,6 +47,15 @@ const PaymentModal = ({ isOpen, onClose, total, orderCode, onConfirm, cartItems 
 
   const handleConfirm = () => {
     if (paymentMethod === 'debt') {
+      // Kiểm tra đăng nhập
+      if (!user) {
+        toast.error('⚠️ Vui lòng đăng nhập để sử dụng tính năng ghi nợ!', {
+          duration: 3000,
+          icon: '🔐'
+        });
+        return;
+      }
+
       // Validate customer info
       if (!customerName.trim() || !customerPhone.trim()) {
         toast.error('Vui lòng nhập đầy đủ thông tin khách hàng');
@@ -301,37 +322,123 @@ const PaymentModal = ({ isOpen, onClose, total, orderCode, onConfirm, cartItems 
                   <div className="w-20 h-20 bg-blue-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
                     <Clock size={40} className="text-white" />
                   </div>
-                  <h3 className="font-black text-xl text-stone-800 mb-4 text-center">Thông tin khách hàng</h3>
+                  <h3 className="font-black text-xl text-stone-800 mb-4 text-center">Thông tin ghi nợ</h3>
                   
-                  <div className="space-y-3">
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-500" size={20} />
-                      <input
-                        type="text"
-                        placeholder="Họ tên khách hàng *"
-                        value={customerName}
-                        onChange={(e) => setCustomerName(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-blue-200 focus:border-blue-500 focus:outline-none font-semibold text-stone-800"
-                      />
-                    </div>
-                    
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-500" size={20} />
-                      <input
-                        type="tel"
-                        placeholder="Số điện thoại *"
-                        value={customerPhone}
-                        onChange={(e) => setCustomerPhone(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-blue-200 focus:border-blue-500 focus:outline-none font-semibold text-stone-800"
-                      />
-                    </div>
+                  {/* Hiển thị thông tin user nếu đã đăng nhập */}
+                  {user && !isEditingDebtInfo ? (
+                    <div className="space-y-3">
+                      {/* Thông tin tài khoản */}
+                      <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border-2 border-blue-200">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="text-green-500" size={20} />
+                            <span className="text-sm font-bold text-stone-600">Tài khoản đang đăng nhập</span>
+                          </div>
+                          <button
+                            onClick={() => setIsEditingDebtInfo(true)}
+                            className="p-2 hover:bg-blue-100 rounded-lg transition-colors group"
+                            title="Chỉnh sửa (mua hộ)"
+                          >
+                            <Edit2 size={16} className="text-blue-500 group-hover:text-blue-600" />
+                          </button>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                              <User className="text-blue-500" size={20} />
+                            </div>
+                            <div>
+                              <p className="text-xs text-stone-500">Họ tên</p>
+                              <p className="font-black text-stone-800">{user.name}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                              <Phone className="text-blue-500" size={20} />
+                            </div>
+                            <div>
+                              <p className="text-xs text-stone-500">Số điện thoại</p>
+                              <p className="font-black text-stone-800">{user.phone}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
 
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mt-4">
-                      <p className="text-xs text-stone-600 leading-relaxed">
-                        <span className="font-bold text-stone-800">Lưu ý:</span> Đơn hàng sẽ được ghi nợ và khách hàng có thể thanh toán sau.
-                      </p>
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                        <p className="text-xs text-stone-600 leading-relaxed">
+                          <span className="font-bold text-stone-800">✓</span> Đơn hàng sẽ được ghi nợ vào tài khoản của bạn. Nhấn <span className="font-bold text-blue-600">Sửa</span> nếu bạn đang mua hộ người khác.
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  ) : !user ? (
+                    // Chưa đăng nhập - Hiển thị thông báo
+                    <div className="space-y-4">
+                      <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6 text-center">
+                        <div className="w-16 h-16 bg-red-100 rounded-full mx-auto mb-3 flex items-center justify-center">
+                          <User className="text-red-500" size={32} />
+                        </div>
+                        <h4 className="font-black text-stone-800 mb-2">Vui lòng đăng nhập</h4>
+                        <p className="text-sm text-stone-600 leading-relaxed">
+                          Bạn cần đăng nhập để sử dụng tính năng <span className="font-bold text-blue-600">Ghi nợ</span>.
+                        </p>
+                      </div>
+                      
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                        <p className="text-xs text-stone-600 leading-relaxed">
+                          <span className="font-bold text-stone-800">💡 Gợi ý:</span> Đăng nhập giúp bạn:
+                        </p>
+                        <ul className="text-xs text-stone-600 mt-2 space-y-1 ml-4">
+                          <li>✓ Theo dõi đơn hàng ghi nợ</li>
+                          <li>✓ Quản lý công nợ dễ dàng</li>
+                          <li>✓ Đặt hàng nhanh hơn lần sau</li>
+                        </ul>
+                      </div>
+                    </div>
+                  ) : (
+                    // Chế độ chỉnh sửa (mua hộ)
+                    <div className="space-y-3">
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
+                        <p className="text-xs text-stone-600 leading-relaxed">
+                          <span className="font-bold text-stone-800">📝 Chế độ mua hộ:</span> Nhập thông tin người nhận nợ thay vì tài khoản của bạn.
+                        </p>
+                      </div>
+
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-500" size={20} />
+                        <input
+                          type="text"
+                          placeholder="Họ tên khách hàng *"
+                          value={customerName}
+                          onChange={(e) => setCustomerName(e.target.value)}
+                          className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-blue-200 focus:border-blue-500 focus:outline-none font-semibold text-stone-800"
+                        />
+                      </div>
+                      
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-500" size={20} />
+                        <input
+                          type="tel"
+                          placeholder="Số điện thoại *"
+                          value={customerPhone}
+                          onChange={(e) => setCustomerPhone(e.target.value)}
+                          className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-blue-200 focus:border-blue-500 focus:outline-none font-semibold text-stone-800"
+                        />
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setCustomerName(user.name);
+                          setCustomerPhone(user.phone);
+                          setIsEditingDebtInfo(false);
+                        }}
+                        className="w-full py-2 text-sm font-bold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      >
+                        ← Quay lại dùng tài khoản của tôi
+                      </button>
+                    </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
