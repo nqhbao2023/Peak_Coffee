@@ -22,14 +22,16 @@ const MenuItem = ({ item, onAddToCart, onOpenModal }) => {
     return (
       <div 
         onClick={handleClick}
-        className="group bg-white p-3 rounded-2xl flex items-center gap-3 shadow-sm hover:shadow-md border border-stone-100 transition-all duration-200 active:scale-[0.98] cursor-pointer"
+        className="group bg-white p-3 rounded-2xl flex items-center gap-3 shadow-sm hover:shadow-md border border-stone-100 transition-shadow duration-150 active:scale-[0.98] cursor-pointer gpu-accelerated"
+        style={{ contain: 'layout style paint' }}
       >
         <div className="relative overflow-hidden rounded-xl w-16 h-16 shrink-0 bg-stone-100">
           <img 
             src={item.image} 
             alt={item.name} 
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
             loading="lazy"
+            decoding="async"
           />
         </div>
         
@@ -51,14 +53,16 @@ const MenuItem = ({ item, onAddToCart, onOpenModal }) => {
   return (
     <div 
       onClick={handleClick}
-      className="group bg-white p-3 rounded-2xl flex gap-4 shadow-sm hover:shadow-md border border-stone-100 transition-all duration-200 active:scale-[0.99] cursor-pointer"
+      className="group bg-white p-3 rounded-2xl flex gap-4 shadow-sm hover:shadow-md border border-stone-100 transition-shadow duration-150 active:scale-[0.99] cursor-pointer gpu-accelerated"
+      style={{ contain: 'layout style paint' }}
     >
       <div className="relative overflow-hidden rounded-xl w-28 h-28 shrink-0 bg-stone-100">
         <img 
           src={item.image} 
           alt={item.name} 
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
           loading="lazy"
+          decoding="async"
         />
         <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-lg text-[9px] font-bold text-stone-800 shadow-sm uppercase tracking-wider border border-stone-100">
           {item.category}

@@ -3,39 +3,60 @@
 @tailwind utilities;
 
 /* ========================================
-   PERFORMANCE OPTIMIZATION FOR MOBILE
+   CRITICAL PERFORMANCE FIXES FOR ANDROID
    ======================================== */
 
-/* Hardware acceleration cho animations */
 @layer base {
+  /* Prevent horizontal overflow - FIX ZOOM ISSUE */
+  html, body {
+    width: 100%;
+    overflow-x: hidden;
+    position: relative;
+    overscroll-behavior-y: none; /* Prevent pull-to-refresh lag */
+  }
+  
+  /* Optimize scrolling */
+  html {
+    scroll-behavior: auto; /* Remove smooth scroll lag */
+    -webkit-overflow-scrolling: touch; /* iOS momentum scrolling */
+  }
+  
+  /* Hardware acceleration for everything */
   * {
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
-  }
-  
-  /* Smooth scroll behavior */
-  html {
-    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Force GPU rendering */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
   }
   
   /* Optimize font rendering */
   body {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
+    /* Remove any default margin/padding */
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* CSS Containment for performance */
+  section, article, div[class*="container"] {
+    contain: layout style paint;
   }
 }
 
 /* ========================================
-   CUSTOM ANIMATIONS (CSS only - NO JS)
+   CUSTOM ANIMATIONS (ULTRA FAST)
    ======================================== */
 
 @layer utilities {
-  /* Fade in animation */
+  /* Fade in - SHORTER duration */
   @keyframes fadeIn {
     from {
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(5px);
     }
     to {
       opacity: 1;
@@ -44,30 +65,50 @@
   }
   
   .animate-fade-in {
-    animation: fadeIn 0.3s ease-out;
+    animation: fadeIn 0.15s ease-out; /* Faster! */
   }
   
-  /* Bounce once (không lặp lại) */
+  /* Bounce once - SHORTER */
   @keyframes bounceOnce {
     0%, 100% {
       transform: translateY(0);
     }
     50% {
-      transform: translateY(-5px);
+      transform: translateY(-3px); /* Less distance */
     }
   }
   
   .animate-bounce-once {
-    animation: bounceOnce 0.5s ease-out;
+    animation: bounceOnce 0.3s ease-out; /* Faster! */
   }
   
-  /* Will-change cho elements có animation */
+  /* Scroll performance hints */
+  .will-change-scroll {
+    will-change: scroll-position;
+  }
+  
   .will-change-transform {
     will-change: transform;
   }
   
   .will-change-opacity {
     will-change: opacity;
+  }
+  
+  /* GPU acceleration class */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+  
+  /* CSS Containment utility */
+  .contain-layout {
+    contain: layout;
+  }
+  
+  .contain-strict {
+    contain: strict;
   }
 }
 
@@ -81,6 +122,15 @@
 }
 
 .no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }

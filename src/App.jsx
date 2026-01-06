@@ -217,12 +217,19 @@ function AppContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Show/hide scroll to top button
+  // Show/hide scroll to top button - THROTTLED for performance
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 400);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setShowScrollTop(window.scrollY > 400);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -236,16 +243,15 @@ function AppContent() {
     return () => { document.body.style.overflow = 'unset'; };
   }, [isCartOpen, selectedProduct, isPaymentOpen, isOrderHistoryOpen, isLoginOpen, isAdminOpen, isFeedbackOpen, isStreakOpen]);
 
-  // Scroll to top when category changes
+  // Scroll to top when category changes - INSTANT for better performance
   const handleCategoryChange = (category) => {
     setActiveCategory(category);
-    if (mainRef.current) {
-      mainRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    // Instant scroll - no smooth for better performance
+    window.scrollTo({ top: 0, behavior: 'auto' });
   };
 
   return (
-    <div className='min-h-screen bg-stone-50 font-sans text-stone-900 pb-24 selection:bg-orange-200 selection:text-orange-900'>
+    <div className='min-h-screen bg-stone-50 font-sans text-stone-900 pb-24 selection:bg-orange-200 selection:text-orange-900 will-change-scroll'>
       {/* Toast Container */}
       <Toaster 
         position="bottom-center"
@@ -298,8 +304,8 @@ function AppContent() {
         onSelectCategory={handleCategoryChange} 
       />
 
-      <main ref={mainRef} className='px-4 mt-6 max-w-md mx-auto space-y-4 min-h-[50vh]'>
-        <div className='flex items-center justify-between'>
+      <main ref={mainRef} className='px-4 mt-6 max-w-md mx-auto space-y-4 min-h-[50vh] will-change-scroll'>
+        <div className='flex items-center justify-between mb-4'>
           <h3 className='font-black text-stone-800 text-lg flex items-center gap-2'>
             {activeCategory === 'Tất cả' ? 'THỰC ĐƠN HÔM NAY' : activeCategory.toUpperCase()}
           </h3>
@@ -308,9 +314,9 @@ function AppContent() {
           </span>
         </div>
         
-        {/* Grid layout */}
+        {/* Grid layout - Optimized with contain */}
         {activeCategory === 'Nước Ngọt' ? (
-          <div className='grid grid-cols-1 gap-3'>
+          <div className='grid grid-cols-1 gap-3 contain-layout'>
             {filteredMenu.map((item) => (
               <MenuItem 
                 key={item.id} 
@@ -321,7 +327,7 @@ function AppContent() {
             ))}
           </div>
         ) : (
-          <div className='grid gap-4'>
+          <div className='grid gap-4 contain-layout'>
             {filteredMenu.map((item) => (
               <MenuItem 
                 key={item.id} 

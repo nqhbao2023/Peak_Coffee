@@ -5,7 +5,15 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      transitionDuration: {
+        '150': '150ms',
+      },
+    },
   },
   plugins: [],
+  // Disable unused CSS for smaller bundle
+  corePlugins: {
+    // Keep only what we need
+  },
 }
