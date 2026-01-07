@@ -10,9 +10,16 @@
   /* Prevent horizontal overflow - FIX ZOOM ISSUE */
   html, body {
     width: 100%;
+    max-width: 100vw;
     overflow-x: hidden;
     position: relative;
     overscroll-behavior-y: none; /* Prevent pull-to-refresh lag */
+  }
+  
+  /* Ensure all containers respect viewport */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    max-width: 100%;
   }
   
   /* Optimize scrolling */

@@ -304,7 +304,7 @@ function AppContent() {
         onSelectCategory={handleCategoryChange} 
       />
 
-      <main ref={mainRef} className='px-4 mt-6 max-w-md mx-auto space-y-4 min-h-[50vh] will-change-scroll'>
+      <main ref={mainRef} className='w-full max-w-md mx-auto px-4 mt-6 space-y-4 min-h-[50vh] will-change-scroll'>
         <div className='flex items-center justify-between mb-4'>
           <h3 className='font-black text-stone-800 text-lg flex items-center gap-2'>
             {activeCategory === 'Tất cả' ? 'THỰC ĐƠN HÔM NAY' : activeCategory.toUpperCase()}

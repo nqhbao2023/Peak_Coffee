@@ -7,7 +7,7 @@ const Header = ({ cartCount, onCartClick, onOrderHistoryClick, onAdminClick, onL
 
   return (
     <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-stone-200 transition-all duration-300">
-      <div className="max-w-md mx-auto px-4 h-16 flex justify-between items-center">
+      <div className="w-full max-w-md mx-auto px-4 h-16 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-2 rounded-xl shadow-lg shadow-orange-200">
             <Coffee className="text-white" size={20} />

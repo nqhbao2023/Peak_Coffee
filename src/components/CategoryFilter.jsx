@@ -3,7 +3,7 @@ import React from 'react';
 const CategoryFilter = ({ categories, activeCategory, onSelectCategory }) => {
   return (
     <div className="sticky top-16 z-40 bg-stone-50/95 backdrop-blur-sm py-4 border-b border-stone-100/50">
-      <div className="px-4 flex gap-2 max-w-md mx-auto overflow-x-auto no-scrollbar snap-x">
+      <div className="w-full max-w-md mx-auto px-4 flex gap-2 overflow-x-auto no-scrollbar snap-x">
         {categories.map((category) => (
           <button 
             key={category} 

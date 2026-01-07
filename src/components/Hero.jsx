@@ -3,7 +3,7 @@ import LoyaltyCard from "./LoyaltyCard";
 
 const Hero = () => {
   return (
-    <section className="px-4 pt-6 max-w-md mx-auto">
+    <section className="w-full max-w-md mx-auto px-4 pt-6">
       {/* Loyalty Card */}
       <LoyaltyCard />
     </section>
