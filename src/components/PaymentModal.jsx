@@ -96,7 +96,6 @@ const PaymentModal = ({ isOpen, onClose, total, orderCode, onConfirm, cartItems 
       });
 
       if (debtOrder) {
-        toast.success(`✅ Đã ghi nợ cho ${customerName}!`);
         onConfirm('debt');
       }
     } else {

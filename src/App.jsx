@@ -189,13 +189,20 @@ function AppContent() {
     setIsPaymentOpen(false);
 
     // Toast notification
+    const isDebt = paymentMethod === 'debt';
+    const title = isDebt 
+        ? `✅ Đã ghi nợ cho ${user?.name || 'Khách hàng'}!` 
+        : 'Đặt hàng thành công! 🎉';
+
     toast.success(
       <div>
-        <p className="font-bold">Đặt hàng thành công! 🎉</p>
+        <p className="font-bold">{title}</p>
         <p className="text-xs mt-1">Mã đơn: #{orderCode}</p>
-        <p className="text-xs mt-1 text-stone-500">
-          Điểm thưởng sẽ được cộng sau khi đơn hoàn thành
-        </p>
+        {!isDebt && (
+           <p className="text-xs mt-1 text-stone-500">
+            Điểm thưởng sẽ được cộng sau khi đơn hoàn thành
+           </p>
+        )}
         {streakResult.success && (
           <p className="text-xs mt-1 text-orange-600 font-bold">
             {streakResult.message}
@@ -203,8 +210,9 @@ function AppContent() {
         )}
       </div>,
       {
-        duration: 5000,
+        duration: 3000,
         position: 'top-center',
+        id: 'order-success', // Prevent duplicates
       }
     );
 
@@ -295,7 +303,6 @@ function AppContent() {
         onOrderHistoryClick={() => setIsOrderHistoryOpen(true)}
         onAdminClick={() => setIsAdminOpen(true)}
         onLoginClick={() => setIsLoginOpen(true)}
-        streakBadge={<StreakBadge onClick={() => setIsStreakOpen(true)} />}
       />
 
       <Hero />
@@ -324,7 +331,7 @@ function AppContent() {
               item={item} 
               onAddToCart={addToCart}
               onOpenModal={setSelectedProduct}
-              priority={index < 10}
+              priority={index < 20} // Tăng số lượng ảnh load eager để tránh warning intervention
             />
           ))}
         </div>

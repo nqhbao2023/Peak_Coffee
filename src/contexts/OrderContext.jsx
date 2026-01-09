@@ -90,15 +90,6 @@ export const OrderProvider = ({ children }) => {
       // Save to Firestore (listener sẽ tự động update state)
       await setDocument(COLLECTIONS.ORDERS, orderId, newOrder);
       
-      // Toast notification cho khách hàng
-      toast.success(
-        <div>
-          <p className="font-bold">✅ Đặt hàng thành công!</p>
-          <p className="text-xs mt-1">Mã đơn: <span className="font-bold text-orange-600">#{orderCode}</span></p>
-        </div>,
-        { duration: 4000 }
-      );
-      
       return orderCode;
     } catch (error) {
       console.error('❌ Error creating order:', error);

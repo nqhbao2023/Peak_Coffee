@@ -37,9 +37,6 @@ const Header = ({ cartCount, onCartClick, onOrderHistoryClick, onAdminClick, onL
             </button>
           )}
 
-          {/* Streak Badge */}
-          {streakBadge}
-
           {/* Order History */}
           <button 
             onClick={onOrderHistoryClick}

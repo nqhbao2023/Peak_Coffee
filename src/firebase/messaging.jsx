@@ -69,8 +69,11 @@ export const getFCMToken = async (userId) => {
     }
 
     // Đăng ký Service Worker
-    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-    console.log('✅ Service Worker registered:', registration);
+    await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    
+    // Đợi Service Worker active hoàn toàn để tránh lỗi "no active Service Worker"
+    const registration = await navigator.serviceWorker.ready;
+    console.log('✅ Service Worker registered & ready:', registration);
 
     // Lấy FCM token
     const token = await getToken(messaging, {
