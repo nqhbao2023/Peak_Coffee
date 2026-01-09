@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, MessageSquare, Send, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -68,29 +68,49 @@ const FeedbackModal = ({ isOpen, onClose }) => {
     }, 800);
   };
 
+  // LOCK SCROLL
+  useEffect(() => {
+    if (isOpen) {
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+    }
+    return () => {
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    };
+  }, [isOpen]);
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center sm:p-4"
+      exit={{ opacity: 0, transition: { duration: 0.2 } }}
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0"
+      style={{ touchAction: 'none' }}
     >
       {/* Backdrop */}
       <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+        animate={{ opacity: 1, backdropFilter: 'blur(12px)' }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-stone-900/70 backdrop-blur-md"
+        transition={{ duration: 0.3 }}
+        className="absolute inset-0 bg-black/85"
         onClick={onClose}
+        style={{ touchAction: 'none' }}
       />
 
       {/* Modal Content */}
       <motion.div 
-        initial={{ y: '100%', opacity: 0.8 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: '100%', opacity: 0 }}
-        transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-        className="relative bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col"
+        initial={{ y: '100%', scale: 0.9 }}
+        animate={{ y: 0, scale: 1 }}
+        exit={{ y: '100%', scale: 0.9 }}
+        transition={{ type: 'spring', damping: 28, stiffness: 300, mass: 0.8 }}
+        className="relative bg-white w-full max-w-md rounded-t-[3rem] sm:rounded-[3rem] shadow-[0_-20px_70px_rgba(0,0,0,0.6)] max-h-[90vh] overflow-hidden flex flex-col border-t-4 border-blue-500"
         onClick={(e) => e.stopPropagation()}
       >
           {/* Header */}

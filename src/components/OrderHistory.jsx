@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Package, Clock, CheckCircle, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { X, Package, Clock, CheckCircle, ChevronDown, Trash2 } from 'lucide-react';
 import { useOrders } from '../contexts/OrderContext';
 import { motion, AnimatePresence } from 'framer-motion';
 

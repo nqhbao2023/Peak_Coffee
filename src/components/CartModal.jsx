@@ -42,13 +42,24 @@ const CartModal = ({ isOpen, onClose, cartItems = [], onUpdateQuantity, onRemove
     onAddItem(cartItem);
   };
 
-  // Prevent scrolling when modal is open
+  // LOCK SCROLL HOÀN TOÀN khi modal mở
   useEffect(() => {
     if (isOpen) {
+      // Lock scroll và lưu vị trí hiện tại
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
       document.body.style.overflow = 'hidden';
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      // Restore scroll khi đóng
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, parseInt(scrollY || '0') * -1);
     };
   }, [isOpen]);
 
@@ -59,25 +70,28 @@ const CartModal = ({ isOpen, onClose, cartItems = [], onUpdateQuantity, onRemove
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4"
+      exit={{ opacity: 0, transition: { duration: 0.2 } }}
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0"
+      style={{ touchAction: 'none' }}
     >
-      {/* Backdrop */}
+      {/* Backdrop FULL - Đậm và Blur mạnh */}
       <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm"
+        initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+        animate={{ opacity: 1, backdropFilter: 'blur(8px)' }}
+        exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+        transition={{ duration: 0.3 }}
+        className="absolute inset-0 bg-black/80"
         onClick={onClose}
+        style={{ touchAction: 'none' }}
       />
 
-      {/* Modal Content */}
+      {/* Modal Content - Animation ấn tượng */}
       <motion.div 
-        initial={{ y: '100%', opacity: 0.8 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: '100%', opacity: 0 }}
-        transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-        className="relative bg-stone-50 w-full max-w-md rounded-t-[2rem] sm:rounded-[2rem] shadow-2xl max-h-[90vh] flex flex-col"
+        initial={{ y: '100%', scale: 0.95 }}
+        animate={{ y: 0, scale: 1 }}
+        exit={{ y: '100%', scale: 0.95 }}
+        transition={{ type: 'spring', damping: 30, stiffness: 300, mass: 0.8 }}
+        className="relative bg-white w-full max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-[0_-10px_60px_rgba(0,0,0,0.4)] max-h-[92vh] flex flex-col border-t-4 border-orange-500"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

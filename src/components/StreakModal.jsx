@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, Flame, Calendar, Trophy, Gift } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useStreak } from '../contexts/StreakContext';
@@ -28,21 +28,50 @@ const StreakModal = ({ isOpen, onClose }) => {
 
   const last30Days = getLast30Days();
 
+  // LOCK SCROLL
+  useEffect(() => {
+    if (isOpen) {
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+    }
+    return () => {
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    };
+  }, [isOpen]);
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 bg-stone-900/70 backdrop-blur-md"
+      exit={{ opacity: 0, transition: { duration: 0.2 } }}
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0"
+      style={{ touchAction: 'none' }}
       onClick={onClose}
     >
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+        animate={{ opacity: 1, backdropFilter: 'blur(15px)' }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="absolute inset-0 bg-gradient-to-b from-black/90 to-black/95"
+        style={{ touchAction: 'none' }}
+      />
+      
       <motion.div 
-        initial={{ y: '100%', opacity: 0.8 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: '100%', opacity: 0 }}
-        transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-        className="relative bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
+        initial={{ y: '100%', scale: 0.85, rotateX: 20 }}
+        animate={{ y: 0, scale: 1, rotateX: 0 }}
+        exit={{ y: '100%', scale: 0.85, rotateX: 15 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 260, mass: 0.9 }}
+        className="relative bg-white w-full max-w-md rounded-t-[3rem] sm:rounded-[3rem] shadow-[0_-20px_80px_rgba(251,146,60,0.5)] max-h-[92vh] overflow-hidden flex flex-col border-t-[6px] border-gradient-to-r from-orange-500 to-red-500"
         onClick={(e) => e.stopPropagation()}
+        style={{ perspective: '2000px', transformStyle: 'preserve-3d' }}
       >
           {/* Header */}
           <div className="bg-gradient-to-br from-orange-500 to-red-500 p-6 text-white relative overflow-hidden">

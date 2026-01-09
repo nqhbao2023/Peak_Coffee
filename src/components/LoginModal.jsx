@@ -103,13 +103,22 @@ const LoginModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // Prevent scrolling when modal is open
+  // LOCK SCROLL HOÀN TOÀN
   useEffect(() => {
     if (isOpen) {
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
       document.body.style.overflow = 'hidden';
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, parseInt(scrollY || '0') * -1);
     };
   }, [isOpen]);
 
@@ -117,16 +126,29 @@ const LoginModal = ({ isOpen, onClose }) => {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-stone-900/70 backdrop-blur-md"
+      exit={{ opacity: 0, transition: { duration: 0.2 } }}
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      style={{ touchAction: 'none' }}
       onClick={onClose}
     >
+      {/* Backdrop FULL với animation */}
+      <motion.div
+        initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+        animate={{ opacity: 1, backdropFilter: 'blur(20px)' }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.4 }}
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        style={{ touchAction: 'none' }}
+      />
+      
       <motion.div 
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="relative bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden"
+        initial={{ scale: 0.7, opacity: 0, y: 50, rotateX: 25 }}
+        animate={{ scale: 1, opacity: 1, y: 0, rotateX: 0 }}
+        exit={{ scale: 0.8, opacity: 0, y: 30, rotateX: 15 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 250, mass: 0.9 }}
+        className="relative bg-white w-full max-w-sm rounded-3xl shadow-[0_20px_100px_rgba(0,0,0,0.8)] overflow-hidden ring-4 ring-orange-500/30"
         onClick={(e) => e.stopPropagation()}
+        style={{ perspective: '2000px', transformStyle: 'preserve-3d' }}
       >
         {/* Header */}
         <div className={`p-6 text-white relative overflow-hidden ${
