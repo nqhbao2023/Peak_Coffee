@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { X, Trash2, Minus, Plus, ShoppingBag, Gift, Sparkles, TrendingUp, Zap, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { X, Trash2, Minus, Plus, ShoppingBag, Gift, Sparkles, TrendingUp, Zap, ChevronRight, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLoyalty } from '../contexts/LoyaltyContext';
 import { useMenu } from '../contexts/MenuContext';
 import { getSuggestions, calculateTotal } from '../utils/suggestionEngine';
 
-const CartModal = ({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem, onCheckout, onAddItem }) => {
+const CartModal = ({ isOpen, onClose, cartItems = [], onUpdateQuantity, onRemoveItem, onCheckout, onAddItem }) => {
   const { vouchers } = useLoyalty();
   const { menuItems } = useMenu();
   const [useVoucher, setUseVoucher] = useState(false);
@@ -41,29 +42,43 @@ const CartModal = ({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem,
     onAddItem(cartItem);
   };
 
-  return (
+  // Prevent scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  // Early return nếu modal đóng
+  if (!isOpen) return null;
+
+  return createPortal(
     <motion.div 
-      initial={{ opacity: 1 }}
+      initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 1, transition: { duration: 0.3 } }}
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 pointer-events-none"
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4"
     >
       {/* Backdrop */}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm pointer-events-auto"
+        className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm"
         onClick={onClose}
-      ></motion.div>
+      />
 
       {/* Modal Content */}
       <motion.div 
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="relative bg-stone-50 w-full max-w-md rounded-t-[2rem] sm:rounded-[2rem] shadow-2xl max-h-[90vh] flex flex-col pointer-events-auto"
+        initial={{ y: '100%', opacity: 0.8 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: '100%', opacity: 0 }}
+        transition={{ type: 'spring', damping: 28, stiffness: 350 }}
+        className="relative bg-stone-50 w-full max-w-md rounded-t-[2rem] sm:rounded-[2rem] shadow-2xl max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="p-5 border-b border-stone-200 flex justify-between items-center bg-white rounded-t-[2rem]">
@@ -397,7 +412,8 @@ const CartModal = ({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem,
           </div>
         )}
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body
   );
 };
 

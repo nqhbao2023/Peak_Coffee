@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, User, Phone, LogIn, UserPlus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
@@ -102,7 +103,17 @@ const LoginModal = ({ isOpen, onClose }) => {
     }
   };
 
-  return (
+  // Prevent scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  return createPortal(
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -242,7 +253,8 @@ const LoginModal = ({ isOpen, onClose }) => {
           </button>
         </form>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body
   );
 };
 

@@ -28,7 +28,8 @@ export const requestNotificationPermission = async () => {
 
     if (Notification.permission === 'denied') {
       console.warn('⚠️ Notification permission bị từ chối');
-      toast.error('Bạn đã chặn thông báo. Vui lòng bật lại trong cài đặt trình duyệt!');
+      // Không spam toast lỗi này mỗi lần load trang
+      // toast.error('Bạn đã chặn thông báo. Vui lòng bật lại trong cài đặt trình duyệt!');
       return false;
     }
 

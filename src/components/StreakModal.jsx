@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Flame, Calendar, Trophy, Gift } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useStreak } from '../contexts/StreakContext';
 
 const StreakModal = ({ isOpen, onClose }) => {
@@ -29,22 +29,21 @@ const StreakModal = ({ isOpen, onClose }) => {
   const last30Days = getLast30Days();
 
   return (
-    <AnimatePresence>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 bg-stone-900/70 backdrop-blur-md"
+      onClick={onClose}
+    >
       <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-stone-900/70 backdrop-blur-md"
-        onClick={onClose}
+        initial={{ y: '100%', opacity: 0.8 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: '100%', opacity: 0 }}
+        transition={{ type: 'spring', damping: 28, stiffness: 350 }}
+        className="relative bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
       >
-        <motion.div 
-          initial={{ y: '100%', opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: '100%', opacity: 0 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
-          onClick={(e) => e.stopPropagation()}
-        >
           {/* Header */}
           <div className="bg-gradient-to-br from-orange-500 to-red-500 p-6 text-white relative overflow-hidden">
             <div className="relative z-10">
@@ -178,7 +177,6 @@ const StreakModal = ({ isOpen, onClose }) => {
           </div>
         </motion.div>
       </motion.div>
-    </AnimatePresence>
   );
 };
 

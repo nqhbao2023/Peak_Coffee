@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plus, Flame, Snowflake } from 'lucide-react';
 
-const MenuItem = ({ item, onAddToCart, onOpenModal }) => {
+const MenuItem = ({ item, onAddToCart, onOpenModal, priority = false }) => {
   // Neu la mon "quick add" (nuoc ngot) -> them thang vao gio
   const handleClick = () => {
     if (item.isQuickAdd) {
@@ -22,28 +22,31 @@ const MenuItem = ({ item, onAddToCart, onOpenModal }) => {
     return (
       <div 
         onClick={handleClick}
-        className="group bg-white p-3 rounded-2xl flex items-center gap-3 shadow-sm hover:shadow-md border border-stone-100 transition-shadow duration-150 active:scale-[0.98] cursor-pointer gpu-accelerated"
+        className="group bg-white p-3 rounded-xl flex items-center gap-3 shadow-sm hover:shadow-md border border-coffee-100 transition-all duration-200 active:scale-[0.98] cursor-pointer"
         style={{ contain: 'layout style paint' }}
       >
-        <div className="relative overflow-hidden rounded-xl w-16 h-16 shrink-0 bg-stone-100">
+        <div className="relative overflow-hidden rounded-lg w-16 h-16 shrink-0 bg-coffee-50 border border-coffee-50">
           <img 
             src={item.image} 
             alt={item.name} 
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
-            loading="lazy"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+            loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : "auto"}
+            width="64"
+            height="64"
             decoding="async"
           />
         </div>
         
         <div className="flex-1 min-w-0">
-          <h4 className="font-bold text-stone-800 text-sm leading-tight truncate">{item.name}</h4>
-          <span className="text-orange-600 font-black text-base">
+          <h4 className="font-bold text-coffee-900 text-sm leading-tight truncate">{item.name}</h4>
+          <span className="text-brand-red font-extrabold text-base">
             {item.price.toLocaleString()}đ
           </span>
         </div>
         
-        <button className="bg-stone-900 text-white w-9 h-9 rounded-xl flex items-center justify-center hover:bg-orange-600 transition-colors shadow-md shrink-0">
-          <Plus size={18} strokeWidth={3} />
+        <button className="bg-coffee-100 text-coffee-800 w-9 h-9 rounded-full flex items-center justify-center group-hover:bg-brand-red group-hover:text-white transition-colors shadow-sm shrink-0">
+          <Plus size={18} strokeWidth={2.5} />
         </button>
       </div>
     );
@@ -53,29 +56,33 @@ const MenuItem = ({ item, onAddToCart, onOpenModal }) => {
   return (
     <div 
       onClick={handleClick}
-      className="group bg-white p-3 rounded-2xl flex gap-4 shadow-sm hover:shadow-md border border-stone-100 transition-shadow duration-150 active:scale-[0.99] cursor-pointer gpu-accelerated"
+      className="group bg-white p-3 rounded-2xl flex gap-4 shadow-sm hover:shadow-md border border-coffee-100 transition-all duration-200 active:scale-[0.99] cursor-pointer"
       style={{ contain: 'layout style paint' }}
     >
-      <div className="relative overflow-hidden rounded-xl w-28 h-28 shrink-0 bg-stone-100">
+      <div className="relative overflow-hidden rounded-xl w-28 h-28 shrink-0 bg-coffee-50 border border-coffee-50">
         <img 
           src={item.image} 
           alt={item.name} 
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
-          loading="lazy"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : "auto"}
+          width="112"
+          height="112"
           decoding="async"
         />
-        <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-lg text-[9px] font-bold text-stone-800 shadow-sm uppercase tracking-wider border border-stone-100">
+        {/* Category Badge */}
+        <div className="absolute top-0 left-0 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-br-lg text-[9px] font-bold text-coffee-800 shadow-sm border-r border-b border-coffee-100">
           {item.category}
         </div>
         
-        {/* Hien thi icon neu co options */}
+        {/* Temp Icons */}
         {item.hasTemp && (
-          <div className="absolute bottom-2 right-2 flex gap-1">
-            <span className="bg-blue-500/90 p-1 rounded-md">
-              <Snowflake size={12} className="text-white" />
+          <div className="absolute bottom-1 right-1 flex gap-1">
+            <span className="bg-blue-500/90 p-0.5 rounded shadow-sm backdrop-blur-sm">
+              <Snowflake size={10} className="text-white" />
             </span>
-            <span className="bg-orange-500/90 p-1 rounded-md">
-              <Flame size={12} className="text-white" />
+            <span className="bg-brand-red/90 p-0.5 rounded shadow-sm backdrop-blur-sm">
+              <Flame size={10} className="text-white" />
             </span>
           </div>
         )}
@@ -83,29 +90,27 @@ const MenuItem = ({ item, onAddToCart, onOpenModal }) => {
       
       <div className="flex flex-col justify-between py-1 flex-1 min-w-0">
         <div>
-          <h4 className="font-bold text-stone-800 text-base leading-tight truncate pr-2">{item.name}</h4>
-          <p className="text-[11px] text-stone-500 mt-1.5 line-clamp-2 font-medium leading-relaxed">
+          <h4 className="font-bold text-coffee-900 text-base leading-tight truncate pr-2">{item.name}</h4>
+          <p className="text-[11px] text-coffee-600 mt-1 line-clamp-2 font-medium leading-relaxed">
             {item.description}
           </p>
         </div>
         
         <div className="flex justify-between items-end mt-2">
           <div className="flex flex-col">
-            <span className="text-orange-600 font-black text-lg leading-none">
-              {item.price.toLocaleString()} <span className="text-[10px] font-bold text-orange-500">đ</span>
+            <span className="text-brand-red font-black text-lg leading-none">
+              {item.price.toLocaleString()} <span className="text-[10px] font-bold text-brand-red decoration-slice">đ</span>
             </span>
+            {/* Show Addon Preview if available */}
             {item.hasAddon && (
-              <span className="text-[10px] text-stone-400 mt-0.5">
-                + {item.addonName} {item.addonPrice?.toLocaleString()}đ
+              <span className="text-[10px] text-coffee-400 mt-0.5 font-medium">
+                + Topping?
               </span>
             )}
           </div>
           
-          <button 
-            className="bg-stone-900 text-white w-9 h-9 rounded-xl flex items-center justify-center hover:bg-orange-600 active:bg-orange-700 transition-colors shadow-lg shadow-stone-200"
-            aria-label={`Thêm ${item.name} vào giỏ`}
-          >
-            <Plus size={18} strokeWidth={3} />
+          <button className="bg-coffee-900 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-brand-red transition-colors shadow-md shadow-coffee-200">
+            <Plus size={16} strokeWidth={3} />
           </button>
         </div>
       </div>

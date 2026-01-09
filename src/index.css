@@ -41,6 +41,7 @@
   
   /* Optimize font rendering */
   body {
+    @apply bg-coffee-50 text-coffee-900;
     text-rendering: optimizeLegibility;
     -webkit-text-size-adjust: 100%;
     /* Remove any default margin/padding */

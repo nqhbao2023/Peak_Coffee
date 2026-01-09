@@ -3,7 +3,7 @@
 // Docs: https://firebase.google.com/docs/web/setup
 
 import { initializeApp } from 'firebase/app';
-import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 import { getMessaging, isSupported } from 'firebase/messaging';
@@ -22,7 +22,13 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 // Initialize Services
-export const db = getFirestore(app);
+// Updated to use new persistence API (Firestore 10+)
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
+});
+
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 
@@ -36,15 +42,5 @@ isSupported().then((supported) => {
   }
 });
 export { messaging };
-
-// Enable Offline Persistence (cache local khi mất mạng)
-// Docs: https://firebase.google.com/docs/firestore/manage-data/enable-offline
-enableIndexedDbPersistence(db).catch((err) => {
-  if (err.code === 'failed-precondition') {
-    console.warn('⚠️ Offline persistence chỉ hoạt động trên 1 tab');
-  } else if (err.code === 'unimplemented') {
-    console.warn('⚠️ Browser không hỗ trợ offline persistence');
-  }
-});
 
 export default app;

@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect, useRef } from 'react';
+﻿import React, { useState, useMemo, useEffect, useRef, startTransition } from 'react';
 import { ArrowUp } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import toast, { Toaster } from 'react-hot-toast';
@@ -245,9 +245,11 @@ function AppContent() {
 
   // Scroll to top when category changes - INSTANT for better performance
   const handleCategoryChange = (category) => {
-    setActiveCategory(category);
-    // Instant scroll - no smooth for better performance
-    window.scrollTo({ top: 0, behavior: 'auto' });
+    // Wrap state update in startTransition to prevent UI blocking (INP improvement)
+    startTransition(() => {
+      setActiveCategory(category);
+    });
+    // Removed scroll to top as requested by user
   };
 
   return (
@@ -315,29 +317,17 @@ function AppContent() {
         </div>
         
         {/* Grid layout - Optimized with contain */}
-        {activeCategory === 'Nước Ngọt' ? (
-          <div className='grid grid-cols-1 gap-3 contain-layout'>
-            {filteredMenu.map((item) => (
-              <MenuItem 
-                key={item.id} 
-                item={item} 
-                onAddToCart={addToCart}
-                onOpenModal={setSelectedProduct}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className='grid gap-4 contain-layout'>
-            {filteredMenu.map((item) => (
-              <MenuItem 
-                key={item.id} 
-                item={item} 
-                onAddToCart={addToCart}
-                onOpenModal={setSelectedProduct}
-              />
-            ))}
-          </div>
-        )}
+        <div className={`grid gap-3 contain-layout ${activeCategory === 'Nước Ngọt' ? 'grid-cols-1' : 'grid-cols-1'}`}>
+          {filteredMenu.map((item, index) => (
+            <MenuItem 
+              key={item.id} 
+              item={item} 
+              onAddToCart={addToCart}
+              onOpenModal={setSelectedProduct}
+              priority={index < 10}
+            />
+          ))}
+        </div>
 
         {filteredMenu.length === 0 && (
           <div className='text-center py-10 text-stone-400'>
@@ -362,34 +352,32 @@ function AppContent() {
         {isCartOpen && (
           <CartModal 
             key="cart-modal"
-            isOpen={true} 
-            onClose={() => setIsCartOpen(false)}
+            isOpen={isCartOpen}
             cartItems={cartItems}
             onUpdateQuantity={updateQuantity}
             onRemoveItem={removeFromCart}
             onCheckout={handleCheckout}
             onAddItem={addToCart}
+            onClose={() => setIsCartOpen(false)}
           />
         )}
       </AnimatePresence>
-
       <AnimatePresence>
         {selectedProduct && (
           <ProductModal
             key="product-modal"
-            isOpen={true}
-            onClose={() => setSelectedProduct(null)}
+            isOpen={!!selectedProduct}
             product={selectedProduct}
             onAddToCart={addToCart}
+            onClose={() => setSelectedProduct(null)}
           />
         )}
       </AnimatePresence>
-
       <AnimatePresence>
         {isPaymentOpen && (
           <PaymentModal
             key="payment-modal"
-            isOpen={true}
+            isOpen={isPaymentOpen}
             onClose={() => setIsPaymentOpen(false)}
             total={totalForPayment}
             orderCode={orderCodeForPayment}
@@ -403,7 +391,7 @@ function AppContent() {
         {isOrderHistoryOpen && (
           <OrderHistory
             key="order-history"
-            isOpen={true}
+            isOpen={isOrderHistoryOpen}
             onClose={() => setIsOrderHistoryOpen(false)}
           />
         )}
@@ -413,7 +401,7 @@ function AppContent() {
         {isLoginOpen && (
           <LoginModal
             key="login-modal"
-            isOpen={true}
+            isOpen={isLoginOpen}
             onClose={() => setIsLoginOpen(false)}
           />
         )}
@@ -423,7 +411,7 @@ function AppContent() {
         {isAdminOpen && (
           <AdminDashboard
             key="admin-dashboard"
-            isOpen={true}
+            isOpen={isAdminOpen}
             onClose={() => setIsAdminOpen(false)}
           />
         )}
@@ -433,7 +421,7 @@ function AppContent() {
         {isFeedbackOpen && (
           <FeedbackModal
             key="feedback-modal"
-            isOpen={true}
+            isOpen={isFeedbackOpen}
             onClose={() => setIsFeedbackOpen(false)}
           />
         )}
@@ -443,7 +431,7 @@ function AppContent() {
         {isStreakOpen && (
           <StreakModal
             key="streak-modal"
-            isOpen={true}
+            isOpen={isStreakOpen}
             onClose={() => setIsStreakOpen(false)}
           />
         )}

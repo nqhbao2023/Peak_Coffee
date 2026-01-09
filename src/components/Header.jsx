@@ -6,32 +6,34 @@ const Header = ({ cartCount, onCartClick, onOrderHistoryClick, onAdminClick, onL
   const { user, isAdmin, logout } = useAuth();
 
   return (
-    <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-stone-200 transition-all duration-300">
+    <header className="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-coffee-200 transition-all duration-300 shadow-sm">
       <div className="w-full max-w-md mx-auto px-4 h-16 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-2 rounded-xl shadow-lg shadow-orange-200">
-            <Coffee className="text-white" size={20} />
+        {/* BRANDING: Highlands Coffee Vibe */}
+        <div className="flex items-center gap-2">
+          <div className="bg-brand-red p-1.5 rounded-full border-2 border-brand-red shadow-sm">
+             <Coffee className="text-white transform " size={18} strokeWidth={2.5} />
           </div>
-          <div>
-            <h1 className="font-black text-xl tracking-tighter text-stone-800 leading-none">
-              PEAK <span className="text-orange-600">COFFEE</span>
+          <div className="flex flex-col justify-center -space-y-1">
+            <h1 className="font-extrabold text-lg tracking-tight text-coffee-900 leading-none">
+              PEAK<span className="text-brand-red ml-0.5">COFFEE</span>
             </h1>
-            <div className="flex items-center text-[10px] text-stone-500 font-bold uppercase tracking-widest mt-0.5">
-              <MapPin size={10} className="mr-1 text-orange-500" /> 
-              <span className="truncate max-w-[120px]">COFFEE VIETHOA</span>
+            <div className="flex items-center text-[9px] text-coffee-600 font-bold uppercase tracking-wider ">
+              <MapPin size={9} className="mr-0.5 text-brand-red" /> 
+              <span>VIET HOA</span>
             </div>
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        {/* ACTIONS */}
+        <div className="flex items-center gap-2.5">
           {/* Admin Button */}
           {isAdmin && (
             <button 
               onClick={onAdminClick}
-              className="p-2.5 bg-gradient-to-br from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 rounded-full active:scale-90 transition-all shadow-lg"
+              className="p-2 bg-gradient-to-br from-coffee-600 to-coffee-800 rounded-full active:scale-95 transition-all shadow-md"
               title="Admin Dashboard"
             >
-              <Shield size={20} className="text-white" />
+              <Shield size={18} className="text-white" />
             </button>
           )}
 
@@ -41,43 +43,40 @@ const Header = ({ cartCount, onCartClick, onOrderHistoryClick, onAdminClick, onL
           {/* Order History */}
           <button 
             onClick={onOrderHistoryClick}
-            className="p-2.5 bg-stone-50 hover:bg-stone-100 rounded-full active:scale-90 transition-all border border-stone-100"
+            className="p-2 bg-coffee-50 active:bg-coffee-100 rounded-full active:scale-95 transition-all border border-coffee-200 group"
             title="Đơn hàng của tôi"
           >
-            <Package size={20} className="text-stone-700" />
+            <Package size={18} className="text-coffee-700 group-hover:text-brand-red transition-colors" />
           </button>
 
           {/* User/Login Button */}
           {user ? (
             <button 
               onClick={logout}
-              className="p-2.5 bg-stone-50 hover:bg-stone-100 rounded-full active:scale-90 transition-all border border-stone-100 relative group"
+              className="p-2 bg-coffee-50 active:bg-coffee-100 rounded-full active:scale-95 transition-all border border-coffee-200 relative group"
               title={`${user.name} - Đăng xuất`}
             >
-              <LogOut size={20} className="text-stone-700" />
-              <div className="absolute -bottom-8 right-0 bg-stone-900 text-white text-xs px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                {user.name}
-              </div>
+              <LogOut size={18} className="text-coffee-700 group-hover:text-brand-red transition-colors" />
             </button>
           ) : (
             <button 
               onClick={onLoginClick}
-              className="p-2.5 bg-orange-500 hover:bg-orange-600 rounded-full active:scale-90 transition-all shadow-lg"
+              className="p-2 bg-coffee-900 active:bg-coffee-800 rounded-full active:scale-95 transition-all shadow-md"
               title="Đăng nhập"
             >
-              <User size={20} className="text-white" />
+              <User size={18} className="text-white" />
             </button>
           )}
 
           {/* Cart */}
           <button 
             onClick={onCartClick}
-            className="relative p-2.5 bg-stone-50 hover:bg-stone-100 rounded-full active:scale-90 transition-all border border-stone-100"
+            className="relative p-2 bg-coffee-50 hover:bg-white active:bg-coffee-50 rounded-full active:scale-95 transition-all border border-coffee-200 shadow-sm"
             title="Giỏ hàng"
           >
-            <ShoppingCart size={20} className="text-stone-700" />
+            <ShoppingCart size={18} className="text-coffee-800" />
             {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full animate-bounce shadow-sm border-2 border-white">
+              <span className="absolute -top-1 -right-1 bg-brand-red text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full shadow-sm border border-white">
                 {cartCount}
               </span>
             )}

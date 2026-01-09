@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, MessageSquare, Send, Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 const FeedbackModal = ({ isOpen, onClose }) => {
@@ -69,31 +69,30 @@ const FeedbackModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <AnimatePresence>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center sm:p-4"
+    >
+      {/* Backdrop */}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4"
-      >
-        {/* Backdrop */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-stone-900/70 backdrop-blur-md"
-          onClick={onClose}
-        />
+        className="absolute inset-0 bg-stone-900/70 backdrop-blur-md"
+        onClick={onClose}
+      />
 
-        {/* Modal Content */}
-        <motion.div 
-          initial={{ y: '100%', opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: '100%', opacity: 0 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col"
-          onClick={(e) => e.stopPropagation()}
-        >
+      {/* Modal Content */}
+      <motion.div 
+        initial={{ y: '100%', opacity: 0.8 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: '100%', opacity: 0 }}
+        transition={{ type: 'spring', damping: 28, stiffness: 350 }}
+        className="relative bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
           {/* Header */}
           <div className="p-6 border-b border-stone-200 bg-gradient-to-br from-blue-50 to-white">
             <div className="flex justify-between items-center">
@@ -197,7 +196,6 @@ const FeedbackModal = ({ isOpen, onClose }) => {
           </form>
         </motion.div>
       </motion.div>
-    </AnimatePresence>
   );
 };
 

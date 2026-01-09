@@ -66,27 +66,28 @@ const ProductModal = ({ isOpen, onClose, product, onAddToCart }) => {
 
   return (
     <motion.div 
-      initial={{ opacity: 1 }}
+      initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 1, transition: { duration: 0.3 } }}
-      className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center pointer-events-none"
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center sm:p-4"
     >
       {/* Backdrop */}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-stone-900/70 backdrop-blur-sm pointer-events-auto"
+        className="absolute inset-0 bg-stone-900/70 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Modal */}
       <motion.div 
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="relative bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col pointer-events-auto"
+        initial={{ y: '100%', opacity: 0.8 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: '100%', opacity: 0 }}
+        transition={{ type: 'spring', damping: 28, stiffness: 350 }}
+        className="relative bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header with Image */}
         <div className="relative h-48 bg-stone-200 shrink-0">
