@@ -284,7 +284,7 @@ const PaymentModal = ({ isOpen, onClose, total, orderCode, onConfirm, cartItems 
                   </div>
 
                   {/* Bank Info */}
-                  <div className="space-y-3 bg-white/80 backdrop-blur-sm rounded-2xl p-4 text-sm border border-orange-100">
+                  <div className="space-y-3 bg-white rounded-2xl p-4 text-sm border border-orange-100">
                     <div className="flex justify-between items-center">
                       <span className="text-stone-500 font-medium">Ngân hàng</span>
                       <span className="font-black text-stone-800">{BANK_INFO.bankName}</span>
@@ -365,7 +365,7 @@ const PaymentModal = ({ isOpen, onClose, total, orderCode, onConfirm, cartItems 
                   {user && !isEditingDebtInfo ? (
                     <div className="space-y-3">
                       {/* Thông tin tài khoản */}
-                      <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border-2 border-blue-200">
+                      <div className="bg-white rounded-2xl p-4 border-2 border-blue-200">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
                             <CheckCircle2 className="text-green-500" size={20} />

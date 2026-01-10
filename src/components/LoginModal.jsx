@@ -133,11 +133,11 @@ const LoginModal = ({ isOpen, onClose }) => {
     >
       {/* Backdrop FULL với animation */}
       <motion.div
-        initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-        animate={{ opacity: 1, backdropFilter: 'blur(20px)' }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.4 }}
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60"
         style={{ touchAction: 'none' }}
       />
       
@@ -157,7 +157,7 @@ const LoginModal = ({ isOpen, onClose }) => {
             : 'bg-gradient-to-br from-orange-500 to-red-500'
         }`}>
           <div className="relative z-10">
-            <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-4">
+            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
               {isRegistering ? <UserPlus size={32} className="text-white" /> : <LogIn size={32} className="text-white" />}
             </div>
             <h2 className="text-2xl font-black mb-1">

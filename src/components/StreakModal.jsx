@@ -78,7 +78,7 @@ const StreakModal = ({ isOpen, onClose }) => {
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                  <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center">
                     <Flame size={32} fill="currentColor" className="animate-pulse" />
                   </div>
                   <div>
@@ -96,7 +96,7 @@ const StreakModal = ({ isOpen, onClose }) => {
 
               {/* Next Reward */}
               {nextReward && (
-                <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-3">
+                <div className="bg-white/20 rounded-2xl p-3">
                   <p className="text-xs opacity-90 mb-1">Phần thưởng tiếp theo:</p>
                   <p className="font-black flex items-center gap-2">
                     <Gift size={16} />

@@ -71,17 +71,17 @@ const MenuItem = ({ item, onAddToCart, onOpenModal, priority = false }) => {
           decoding="async"
         />
         {/* Category Badge */}
-        <div className="absolute top-0 left-0 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-br-lg text-[9px] font-bold text-coffee-800 shadow-sm border-r border-b border-coffee-100">
+        <div className="absolute top-0 left-0 bg-white/95 px-2 py-1 rounded-br-lg text-[9px] font-bold text-coffee-800 shadow-sm border-r border-b border-coffee-100">
           {item.category}
         </div>
         
         {/* Temp Icons */}
         {item.hasTemp && (
           <div className="absolute bottom-1 right-1 flex gap-1">
-            <span className="bg-blue-500/90 p-0.5 rounded shadow-sm backdrop-blur-sm">
+            <span className="bg-blue-500 p-0.5 rounded shadow-sm">
               <Snowflake size={10} className="text-white" />
             </span>
-            <span className="bg-brand-red/90 p-0.5 rounded shadow-sm backdrop-blur-sm">
+            <span className="bg-brand-red p-0.5 rounded shadow-sm">
               <Flame size={10} className="text-white" />
             </span>
           </div>

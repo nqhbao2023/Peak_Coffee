@@ -105,11 +105,29 @@ export const MENU_DATA = [
     name: "Nước Mía",
     price: 10000,
     category: "Giải Khát",
-    image: "https://images.unsplash.com/photo-1625865145027-b2283fc4df7e?q=80&w=500&auto=format&fit=crop",
+    image: "https://images.unsplash.com/photo-1541658016709-82535e94bc69?q=80&w=500&auto=format&fit=crop",
     description: "Mía ép tươi, có thể thêm chanh muối.",
     hasAddon: true, // Có option thêm chanh muối
     addonName: "Chanh muối",
     addonPrice: 3000,
+  },
+  
+  // ========== TRÁI CÂY ==========
+  {
+    id: 22,
+    name: "Mít Thái",
+    price: 35000,
+    category: "Trái cây",
+    image: "https://minhcaumart.vn/media/com_eshop/products/8936021570761.jpg",
+    description: "Mít Thái giòn ngọt, vàng ươm, tách múi sẵn.",
+  },
+  {
+    id: 23,
+    name: "Dừa Xiêm (Trái)",
+    price: 25000,
+    category: "Trái cây",
+    image: "https://product.hstatic.net/200000257008/product/dua_xiem_got_troc_5f187a02c300451e9b60be5a70377c8e_grande.jpg",
+    description: "Dừa xiêm nguyên trái, bao ngọt, nhiều nước.",
   },
 
   // ========== NƯỚC NGỌT ==========

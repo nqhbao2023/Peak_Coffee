@@ -191,7 +191,7 @@ const CartModal = ({ isOpen, onClose, cartItems = [], onUpdateQuantity, onRemove
                 className="mb-3 p-3 bg-gradient-to-r from-orange-400 to-red-400 rounded-xl shadow-md"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm">
                     <span className="text-2xl">{currentTier.icon}</span>
                   </div>
                   <div className="flex-1">
@@ -223,7 +223,7 @@ const CartModal = ({ isOpen, onClose, cartItems = [], onUpdateQuantity, onRemove
                 >
                   {/* Icon + Badge */}
                   <div className="relative">
-                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
                       <span className="text-xl">{nextTier.icon}</span>
                     </div>
                     <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center border-2 border-white">

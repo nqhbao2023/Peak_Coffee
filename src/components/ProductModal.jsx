@@ -64,6 +64,8 @@ const ProductModal = ({ isOpen, onClose, product, onAddToCart }) => {
   };
 
   const handleAddToCart = () => {
+    // Chỉ truyền thông tin sản phẩm và số lượng 1 lần
+    // App.jsx sẽ tự handle logic tách item hoặc gộp
     const cartItem = {
       ...product,
       cartId: `${product.id}-${temperature}-${sugar}-${addon}-${Date.now()}`,
@@ -73,12 +75,13 @@ const ProductModal = ({ isOpen, onClose, product, onAddToCart }) => {
         temperature: product.hasTemp ? temperature : null,
         sugar: product.hasSugar ? sugar : null,
         addon: product.hasAddon ? addon : null,
-      }
+      },
+      addQuantity: quantity // Truyền số lượng cần thêm
     };
     
-    for (let i = 0; i < quantity; i++) {
-      onAddToCart(cartItem);
-    }
+    // Gọi hàm addToCart với cả cục item có số lượng
+    onAddToCart(cartItem);
+    
     onClose();
   };
 
@@ -121,7 +124,7 @@ const ProductModal = ({ isOpen, onClose, product, onAddToCart }) => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           <button 
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur rounded-full shadow-lg"
+            className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-lg"
           >
             <X size={20} className="text-stone-700" />
           </button>

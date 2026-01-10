@@ -40,6 +40,24 @@ export const MenuProvider = ({ children }) => {
           
           await seedCollection(COLLECTIONS.MENU, initialMenu);
           toast.success('✅ Menu đã được khởi tạo!');
+        } else {
+             // AUTO-PATCH: Nếu tìm thấy item trong MENU_DATA mà chưa có trong Firestore (theo ID), tự động thêm vào
+             // Đây là cách "lazy update" cho data
+             const existingIds = firestoreMenu.map(i => parseInt(i.id));
+             const newItems = MENU_DATA.filter(i => !existingIds.includes(i.id));
+             
+             if (newItems.length > 0) {
+                 console.log(`🌱 Found ${newItems.length} new items in code, adding to Firestore...`);
+                 newItems.forEach(async (item) => {
+                    await setDocument(COLLECTIONS.MENU, item.id.toString(), {
+                        ...item,
+                        isAvailable: true,
+                        createdAt: new Date().toISOString(),
+                    });
+                 });
+                 // Update local state immediately to show new items (optional, listener will catch it too)
+                 // But listener is faster.
+             }
         }
 
         // Setup realtime listener

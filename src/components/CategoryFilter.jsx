@@ -21,7 +21,7 @@ const CategoryFilter = ({ categories, activeCategory, onSelectCategory }) => {
   }, [categories]);
 
   return (
-    <div className="sticky top-16 z-40 bg-coffee-50/95 backdrop-blur-md py-3 border-b border-coffee-200/50 shadow-sm">
+    <div className="sticky top-16 z-40 bg-coffee-50 border-b border-coffee-200/50 shadow-sm" style={{ contain: 'layout style paint' }}>
       <div className="relative w-full max-w-md mx-auto">
         
         {/* Left Shadow Gradient */}
@@ -33,7 +33,7 @@ const CategoryFilter = ({ categories, activeCategory, onSelectCategory }) => {
         <div 
           ref={scrollRef}
           onScroll={checkScroll}
-          className="flex gap-3 overflow-x-auto no-scrollbar snap-x px-4 py-1"
+          className="flex gap-3 overflow-x-auto no-scrollbar snap-x px-4 py-2"
         >
           {categories.map((category) => (
             <button 

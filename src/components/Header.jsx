@@ -1,13 +1,17 @@
 import React from 'react';
-import { Coffee, ShoppingCart, MapPin, Package, Shield, User, LogOut } from 'lucide-react';
+import { Coffee, ShoppingCart, MapPin, Package, Shield, User, LogOut, RefreshCw } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Header = ({ cartCount, onCartClick, onOrderHistoryClick, onAdminClick, onLoginClick, streakBadge }) => {
   const { user, isAdmin, logout } = useAuth();
+  
+  const handleReload = () => {
+    window.location.reload();
+  };
 
   return (
-    <header className="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-coffee-200 transition-all duration-300 shadow-sm">
-      <div className="w-full max-w-md mx-auto px-4 h-16 flex justify-between items-center">
+    <header className="bg-white/95 sticky top-0 z-50 border-b border-coffee-200 transition-none shadow-sm h-16" style={{ contain: 'layout style paint' }}>
+      <div className="w-full max-w-md mx-auto px-4 h-full flex justify-between items-center">
         {/* BRANDING: Highlands Coffee Vibe */}
         <div className="flex items-center gap-2">
           <div className="bg-brand-red p-1.5 rounded-full border-2 border-brand-red shadow-sm">
@@ -25,7 +29,16 @@ const Header = ({ cartCount, onCartClick, onOrderHistoryClick, onAdminClick, onL
         </div>
         
         {/* ACTIONS */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
+          {/* Reload Button */}
+          <button 
+            onClick={handleReload}
+            className="p-2 bg-coffee-50 active:bg-coffee-100 rounded-full active:scale-95 transition-none border border-coffee-200"
+            title="Tải lại trang"
+          >
+            <RefreshCw size={18} className="text-coffee-600" />
+          </button>
+
           {/* Admin Button */}
           {isAdmin && (
             <button 

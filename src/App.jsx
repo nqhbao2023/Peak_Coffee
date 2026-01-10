@@ -88,23 +88,40 @@ function AppContent() {
 
   // Cart Logic - Su dung cartId de phan biet cac mon co options khac nhau
   const addToCart = (item) => {
+    // Lấy số lượng cần thêm (mặc định là 1 nếu không có addQuantity)
+    const quantityToAdd = item.addQuantity || 1;
+
     setCartItems(prev => {
-      // Tim mon co cung cartId (bao gom ca options)
+      // Vì cartId chứa timestamp (từ ProductModal) nên mỗi lần thêm từ P.Modal là duy nhất
+      // Tuy nhiên nếu logic thay đổi sau này, vẫn giữ logic check existing
       const existingIndex = prev.findIndex(i => i.cartId === item.cartId);
+      
+      // Loại bỏ thuộc tính tạm 'addQuantity' trước khi lưu vào state
+      // eslint-disable-next-line no-unused-vars
+      const { addQuantity, ...itemToSave } = item;
+
       if (existingIndex > -1) {
         const updated = [...prev];
-        updated[existingIndex] = { ...updated[existingIndex], quantity: updated[existingIndex].quantity + 1 };
+        updated[existingIndex] = { 
+          ...updated[existingIndex], 
+          quantity: updated[existingIndex].quantity + quantityToAdd 
+        };
         return updated;
       }
-      return [...prev, { ...item, quantity: 1 }];
+      return [...prev, { ...itemToSave, quantity: quantityToAdd }];
     });
     
-    // Toast notification
-    toast.success('Đã thêm vào giỏ hàng!', {
-      duration: 2000,
-      position: 'top-center',
-      icon: '🛒',
-    });
+    // Toast notification - Hiển thị số lượng đã thêm
+    toast.success(
+      quantityToAdd > 1 
+        ? `Đã thêm ${quantityToAdd} món vào giỏ!` 
+        : 'Đã thêm vào giỏ hàng!', 
+      {
+        duration: 2000,
+        position: 'top-center',
+        icon: '🛒',
+      }
+    );
     
     // Vibration feedback cho mobile
     if (navigator.vibrate) navigator.vibrate(50);
@@ -262,11 +279,12 @@ function AppContent() {
 
   return (
     <div className='min-h-screen bg-stone-50 font-sans text-stone-900 pb-24 selection:bg-orange-200 selection:text-orange-900 will-change-scroll'>
-      {/* Toast Container */}
+      {/* Toast Container - Limit toasts to prevent freezing */}
       <Toaster 
         position="bottom-center"
         reverseOrder={false}
         gutter={8}
+        limit={3} // Giới hạn số lượng toast hiển thị cùng lúc
         containerStyle={{
           bottom: 120,
         }}

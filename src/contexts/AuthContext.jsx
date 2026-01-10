@@ -148,7 +148,15 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setIsAdmin(false);
     localStorage.removeItem(USER_KEY);
-    toast.success('👋 Đã đăng xuất!');
+    
+    // SECURITY: Clear toàn bộ dữ liệu nhạy cảm khi đăng xuất
+    localStorage.removeItem('peak_orders'); // Xóa cache đơn hàng
+    localStorage.removeItem('peak_loyalty_points'); // Xóa điểm tích lũy guest
+    localStorage.removeItem('peak_loyalty_vouchers'); // Xóa voucher guest
+    
+    // Force reload để reset toàn bộ state của ứng dụng sạch sẽ nhất
+    // Điều này đảm bảo Context Order, Loyalty được khởi tạo lại từ đầu
+    window.location.reload();
   };
 
   const value = {
