@@ -99,6 +99,8 @@ export const OrderProvider = ({ children }) => {
       if (unsubscribe) {
         unsubscribe();
       }
+      // Clear orders khi unmount hoặc đổi user để tránh leak data
+      setOrders([]); 
     };
   }, [user, isAdmin]); // Re-run khi auth state change
 

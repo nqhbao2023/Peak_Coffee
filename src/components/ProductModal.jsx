@@ -96,78 +96,88 @@ const ProductModal = ({ isOpen, onClose, product, onAddToCart }) => {
       {/* Backdrop FULL với gradient */}
       <motion.div 
         initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-        animate={{ opacity: 1, backdropFilter: 'blur(15px)' }}
+        animate={{ opacity: 1, backdropFilter: 'blur(12px)' }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
-        className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/90 to-black/95"
+        className="absolute inset-0 bg-coffee-950/60"
         onClick={onClose}
         style={{ touchAction: 'none' }}
       />
 
       {/* Modal với 3D effect */}
       <motion.div 
-        initial={{ y: '100%', scale: 0.85, rotateX: 20 }}
-        animate={{ y: 0, scale: 1, rotateX: 0 }}
-        exit={{ y: '100%', scale: 0.85, rotateX: 15 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 250, mass: 1 }}
-        className="relative bg-white w-full max-w-md rounded-t-[3rem] sm:rounded-[3rem] shadow-[0_-25px_80px_rgba(0,0,0,0.7)] max-h-[92vh] overflow-hidden flex flex-col border-t-[6px] border-gradient-to-r from-orange-500 to-red-500"
+        initial={{ y: '100%', scale: 0.95 }}
+        animate={{ y: 0, scale: 1 }}
+        exit={{ y: '100%', scale: 0.95 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300, mass: 0.8 }}
+        className="relative bg-white w-full max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl max-h-[92vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
-        style={{ perspective: '1500px', transformStyle: 'preserve-3d' }}
+        style={{ transformOrigin: 'bottom center' }}
       >
         {/* Header with Image */}
-        <div className="relative h-48 bg-stone-200 shrink-0">
+        <div className="relative h-56 bg-coffee-100 shrink-0">
           <img 
             src={product.image} 
             alt={product.name}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-coffee-950/80 via-transparent to-transparent" />
+          
           <button 
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-lg"
+            className="absolute top-4 right-4 p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white hover:text-brand-red transition-all duration-200"
           >
-            <X size={20} className="text-stone-700" />
+            <X size={20} />
           </button>
-          <div className="absolute bottom-4 left-4 right-4">
-            <span className="text-xs font-bold text-orange-400 uppercase tracking-wider">
+
+          <div className="absolute bottom-5 left-6 right-6">
+            <span className="inline-block px-2 py-0.5 rounded bg-brand-red text-white text-[10px] font-bold uppercase tracking-wider mb-2 shadow-sm">
               {product.category}
             </span>
-            <h2 className="text-2xl font-black text-white mt-1">{product.name}</h2>
+            <h2 className="text-3xl font-black text-white leading-tight shadow-sm drop-shadow-md">{product.name}</h2>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-5 space-y-5 overflow-y-auto">
-          <p className="text-stone-500 text-sm">{product.description}</p>
+        <div className="p-6 space-y-6 overflow-y-auto bg-white flex-1">
+          <p className="text-coffee-600 text-sm leading-relaxed font-medium">{product.description}</p>
 
           {/* Temperature Option */}
           {product.hasTemp && (
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-stone-700">Chọn nhiệt độ</label>
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-coffee-400 uppercase tracking-wider">Chọn nhiệt độ</label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setTemperature('cold')}
-                  className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                  className={`relative flex items-center justify-center gap-2 p-4 rounded-2xl border transition-all duration-200 active:scale-[0.98] ${
                     temperature === 'cold' 
-                      ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                      : 'border-stone-200 text-stone-500 hover:border-stone-300'
+                      ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-md shadow-blue-500/10' 
+                      : 'border-coffee-100 bg-white text-coffee-400 hover:border-coffee-200'
                   }`}
                 >
-                  <Snowflake size={18} />
-                  <span className="font-bold">Đá (Lạnh)</span>
-                  {temperature === 'cold' && <Check size={16} className="ml-auto" />}
+                  <Snowflake size={20} />
+                  <span className="font-bold">Đá Lạnh</span>
+                  {temperature === 'cold' && (
+                    <div className="absolute top-2 right-2 p-0.5 bg-blue-500 rounded-full">
+                        <Check size={10} className="text-white" strokeWidth={4} />
+                    </div>
+                  )}
                 </button>
                 <button
                   onClick={() => setTemperature('hot')}
-                  className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                  className={`relative flex items-center justify-center gap-2 p-4 rounded-2xl border transition-all duration-200 active:scale-[0.98] ${
                     temperature === 'hot' 
-                      ? 'border-orange-500 bg-orange-50 text-orange-700' 
-                      : 'border-stone-200 text-stone-500 hover:border-stone-300'
+                      ? 'border-brand-red bg-red-50 text-brand-red shadow-md shadow-brand-red/10' 
+                      : 'border-coffee-100 bg-white text-coffee-400 hover:border-coffee-200'
                   }`}
                 >
-                  <Flame size={18} />
+                  <Flame size={20} />
                   <span className="font-bold">Nóng</span>
-                  {temperature === 'hot' && <Check size={16} className="ml-auto" />}
+                  {temperature === 'hot' && (
+                     <div className="absolute top-2 right-2 p-0.5 bg-brand-red rounded-full">
+                        <Check size={10} className="text-white" strokeWidth={4} />
+                    </div>
+                  )}
                 </button>
               </div>
             </div>
@@ -175,25 +185,25 @@ const ProductModal = ({ isOpen, onClose, product, onAddToCart }) => {
 
           {/* Sugar Option */}
           {product.hasSugar && (
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-stone-700">Chọn đường</label>
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-coffee-400 uppercase tracking-wider">Độ ngọt</label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setSugar(true)}
-                  className={`p-3 rounded-xl border-2 font-bold transition-all ${
+                  className={`p-3.5 rounded-2xl border font-bold transition-all duration-200 active:scale-[0.98] ${
                     sugar 
-                      ? 'border-green-500 bg-green-50 text-green-700' 
-                      : 'border-stone-200 text-stone-500 hover:border-stone-300'
+                      ? 'border-coffee-600 bg-coffee-50 text-coffee-800 shadow-md' 
+                      : 'border-coffee-100 text-coffee-400 hover:border-coffee-200'
                   }`}
                 >
                   Có đường
                 </button>
                 <button
                   onClick={() => setSugar(false)}
-                  className={`p-3 rounded-xl border-2 font-bold transition-all ${
+                  className={`p-3.5 rounded-2xl border font-bold transition-all duration-200 active:scale-[0.98] ${
                     !sugar 
-                      ? 'border-amber-500 bg-amber-50 text-amber-700' 
-                      : 'border-stone-200 text-stone-500 hover:border-stone-300'
+                      ? 'border-coffee-600 bg-coffee-50 text-coffee-800 shadow-md' 
+                      : 'border-coffee-100 text-coffee-400 hover:border-coffee-200'
                   }`}
                 >
                   Không đường
@@ -204,20 +214,25 @@ const ProductModal = ({ isOpen, onClose, product, onAddToCart }) => {
 
           {/* Addon Option */}
           {product.hasAddon && (
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-stone-700">Thêm topping</label>
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-coffee-400 uppercase tracking-wider">Thêm topping</label>
               <button
                 onClick={() => setAddon(!addon)}
-                className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
+                className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 active:scale-[0.98] ${
                   addon 
-                    ? 'border-orange-500 bg-orange-50' 
-                    : 'border-stone-200 hover:border-stone-300'
+                    ? 'border-brand-red bg-red-50 shadow-md shadow-brand-red/10' 
+                    : 'border-coffee-100 hover:border-coffee-200'
                 }`}
               >
-                <span className={`font-bold ${addon ? 'text-orange-700' : 'text-stone-600'}`}>
-                  + {product.addonName}
-                </span>
-                <span className={`font-bold ${addon ? 'text-orange-600' : 'text-stone-400'}`}>
+                <div className="flex items-center gap-3">
+                   <div className={`w-5 h-5 rounded-md flex items-center justify-center border ${addon ? 'bg-brand-red border-brand-red' : 'border-coffee-300'}`}>
+                        {addon && <Check size={14} className="text-white" strokeWidth={3} />}
+                   </div>
+                   <span className={`font-bold ${addon ? 'text-brand-red' : 'text-coffee-700'}`}>
+                    + {product.addonName}
+                   </span>
+                </div>
+                <span className={`font-bold ${addon ? 'text-brand-red' : 'text-coffee-400'}`}>
                   +{product.addonPrice?.toLocaleString()}đ
                 </span>
               </button>
@@ -225,35 +240,38 @@ const ProductModal = ({ isOpen, onClose, product, onAddToCart }) => {
           )}
 
           {/* Quantity */}
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-bold text-stone-700">Số lượng</label>
-            <div className="flex items-center gap-4 bg-stone-100 rounded-xl p-1">
+          <div className="py-2">
+            <div className="flex justify-between items-center mb-3">
+                 <label className="text-xs font-bold text-coffee-400 uppercase tracking-wider">Số lượng</label>
+            </div>
+            <div className="flex items-center justify-between bg-coffee-50 rounded-2xl p-2 border border-coffee-100">
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="w-10 h-10 flex items-center justify-center bg-white rounded-lg shadow-sm active:scale-95 transition-transform"
+                className="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm text-coffee-700 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"
                 disabled={quantity <= 1}
               >
-                <Minus size={18} className={quantity <= 1 ? 'text-stone-300' : 'text-stone-700'} />
+                <Minus size={20} strokeWidth={2.5} />
               </button>
-              <span className="font-black text-lg w-8 text-center">{quantity}</span>
+              <span className="font-black text-2xl text-coffee-900 w-12 text-center">{quantity}</span>
               <button
                 onClick={() => setQuantity(quantity + 1)}
-                className="w-10 h-10 flex items-center justify-center bg-white rounded-lg shadow-sm active:scale-95 transition-transform"
+                className="w-12 h-12 flex items-center justify-center bg-brand-red text-white rounded-xl shadow-md shadow-brand-red/20 active:scale-95 transition-all"
               >
-                <Plus size={18} className="text-stone-700" />
+                <Plus size={20} strokeWidth={2.5} />
               </button>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-5 border-t border-stone-100 bg-white shrink-0">
+        <div className="p-6 border-t border-coffee-100 bg-white shrink-0 pb-8 sm:pb-6">
           <button
             onClick={handleAddToCart}
-            className="w-full bg-stone-900 hover:bg-stone-800 text-white py-4 rounded-2xl font-black text-base flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] transition-all"
+            className="w-full bg-coffee-900 hover:bg-coffee-800 text-white py-4 rounded-2xl font-black text-base flex items-center justify-center gap-3 shadow-xl shadow-coffee-900/20 active:scale-[0.98] transition-all duration-200"
           >
             <span>THÊM VÀO GIỎ</span>
-            <span className="bg-white/20 px-3 py-1 rounded-lg">
+            <span className="w-1 h-1 bg-white/30 rounded-full"></span>
+            <span className="text-lg">
               {itemTotal.toLocaleString()}đ
             </span>
           </button>

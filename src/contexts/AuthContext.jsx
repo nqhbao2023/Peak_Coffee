@@ -145,8 +145,12 @@ export const AuthProvider = ({ children }) => {
 
   // Đăng xuất
   const logout = () => {
-    setUser(null);
-    setIsAdmin(false);
+    // Không update state ở đây để tránh trigger re-render
+    // Update state sẽ kích hoạt useEffect ở các component khác (như OrderContext)
+    // làm ghi đè lại localStorage trước khi reload
+    // setUser(null); 
+    // setIsAdmin(false);
+    
     localStorage.removeItem(USER_KEY);
     
     // SECURITY: Clear toàn bộ dữ liệu nhạy cảm khi đăng xuất
