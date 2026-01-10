@@ -22,6 +22,14 @@ service cloud.firestore {
     }
     
     // ===== DEBT RECORDS (Public Read & Write) =====
+    match /debt_orders/{orderId} {
+      allow read, write: if true;
+    }
+    
+    match /debt_transactions/{txnId} {
+      allow read, write: if true;
+    }
+
     match /debts/{debtId} {
       allow read, write: if true;
     }

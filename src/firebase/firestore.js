@@ -29,6 +29,8 @@ export const COLLECTIONS = {
   MENU: 'menu',
   ORDERS: 'orders',
   CUSTOMERS: 'customers', // Cho debt management
+  DEBT_ORDERS: 'debt_orders', // Orders ghi nợ
+  DEBT_TRANSACTIONS: 'debt_transactions', // Lịch sử giao dịch nợ
   SETTINGS: 'settings',
 };
 

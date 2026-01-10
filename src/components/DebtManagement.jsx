@@ -6,13 +6,22 @@ import CustomerDebtDetail from './CustomerDebtDetail';
 import DebtHistory from './DebtHistory';
 
 const DebtManagement = () => {
-  const { customers, getDebtStats } = useDebt();
+  const { customers, getDebtStats, isLoading } = useDebt();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [filterStatus, setFilterStatus] = useState('debt'); // 'debt', 'paid', 'all'
   const [activeView, setActiveView] = useState('customers'); // 'customers' or 'history'
 
   const stats = getDebtStats();
+  
+  if (isLoading) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center p-12 text-stone-400">
+        <div className="w-12 h-12 border-4 border-stone-200 border-t-orange-500 rounded-full animate-spin mb-4"></div>
+        <p className="font-bold">Đang tải dữ liệu công nợ...</p>
+      </div>
+    );
+  }
 
   // Filter customers theo status và search
   const filteredCustomers = customers.filter(customer => {
@@ -63,7 +72,12 @@ const DebtManagement = () => {
       </div>
 
       {/* Content */}
-      {activeView === 'customers' ? (
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="w-10 h-10 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mb-4"></div>
+          <p className="text-stone-500 font-medium">Đang tải dữ liệu công nợ...</p>
+        </div>
+      ) : activeView === 'customers' ? (
         <>
           {/* Header + Stats */}
           <div>

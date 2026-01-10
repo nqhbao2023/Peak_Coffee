@@ -177,64 +177,69 @@ function AppContent() {
   };
 
   // Xác nhận thanh toán
-  const handlePaymentConfirm = (paymentMethod) => {
+  const handlePaymentConfirm = async (paymentMethod) => {
     if (cartItems.length === 0) return;
 
-    // Sử dụng voucher nếu có
-    if (usedVoucherInCart && vouchers > 0) {
-      useVoucher();
-    }
-
-    // Tạo đơn hàng
-    const orderCode = createOrder(cartItems, totalForPayment, paymentMethod, usedVoucherInCart);
-
-    // ❌ KHÔNG tích điểm ngay khi đặt hàng
-    // ✅ Chỉ tích điểm khi admin duyệt đơn (status = 'completed')
-
-    // ✅ TĂNG STREAK khi đặt món
-    const streakResult = addStreak();
-    if (streakResult.success && streakResult.reward) {
-      // Có nhận reward từ streak
-      if (streakResult.reward.type === 'voucher') {
-        // Streak reward được xử lý trong StreakModal
-        // User sẽ thấy animation và claim voucher từ modal
+    try {
+      // Sử dụng voucher nếu có
+      if (usedVoucherInCart && vouchers > 0) {
+        useVoucher();
       }
+
+      // Tạo đơn hàng - Await here to get real string, not Promise
+      // Use logic consistent with Debt creation: use existing orderCodeForPayment if available
+      const newOrderCode = await createOrder(
+        cartItems, 
+        totalForPayment, 
+        paymentMethod, 
+        usedVoucherInCart, 
+        orderCodeForPayment // Pass the pre-generated code (matches Debt Record)
+      );
+
+      // ❌ KHÔNG tích điểm ngay khi đặt hàng
+      // ✅ Chỉ tích điểm khi admin duyệt đơn (status = 'completed')
+
+      // ✅ TĂNG STREAK khi đặt món
+      const streakResult = addStreak();
+      
+      // Xóa giỏ hàng
+      setCartItems([]);
+      setIsPaymentOpen(false);
+
+      // Toast notification
+      const isDebt = paymentMethod === 'debt';
+      const title = isDebt 
+          ? `✅ Đã ghi nợ cho ${user?.name || 'Khách hàng'}!` 
+          : 'Đặt hàng thành công! 🎉';
+
+      toast.success(
+        <div>
+          <p className="font-bold">{title}</p>
+          <p className="text-xs mt-1">Mã đơn: #{newOrderCode}</p>
+          {!isDebt && (
+             <p className="text-xs mt-1 text-stone-500">
+              Điểm thưởng sẽ được cộng sau khi đơn hoàn thành
+             </p>
+          )}
+          {streakResult.success && streakResult.message && (
+            <p className="text-xs mt-1 text-orange-600 font-bold">
+              {streakResult.message}
+            </p>
+          )}
+        </div>,
+        {
+          duration: 3000,
+          position: 'top-center',
+          id: 'order-success', // Prevent duplicates
+        }
+      );
+
+      // Vibration feedback
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    } catch (error) {
+      console.error("Payment Error:", error);
+      toast.error('Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại.');
     }
-
-    // Xóa giỏ hàng
-    setCartItems([]);
-    setIsPaymentOpen(false);
-
-    // Toast notification
-    const isDebt = paymentMethod === 'debt';
-    const title = isDebt 
-        ? `✅ Đã ghi nợ cho ${user?.name || 'Khách hàng'}!` 
-        : 'Đặt hàng thành công! 🎉';
-
-    toast.success(
-      <div>
-        <p className="font-bold">{title}</p>
-        <p className="text-xs mt-1">Mã đơn: #{orderCode}</p>
-        {!isDebt && (
-           <p className="text-xs mt-1 text-stone-500">
-            Điểm thưởng sẽ được cộng sau khi đơn hoàn thành
-           </p>
-        )}
-        {streakResult.success && (
-          <p className="text-xs mt-1 text-orange-600 font-bold">
-            {streakResult.message}
-          </p>
-        )}
-      </div>,
-      {
-        duration: 3000,
-        position: 'top-center',
-        id: 'order-success', // Prevent duplicates
-      }
-    );
-
-    // Vibration feedback
-    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
   };
 
   // Scroll to top handler

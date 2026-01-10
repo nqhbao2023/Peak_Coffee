@@ -131,10 +131,10 @@ export const OrderProvider = ({ children }) => {
   }, [orders, isAdmin, user, isLoading]);
 
   // Tạo đơn hàng mới (sync với Firestore)
-  const createOrder = async (cartItems, total, paymentMethod, usedVoucher = false) => {
+  const createOrder = async (cartItems, total, paymentMethod, usedVoucher = false, customOrderCode = null) => {
     try {
       const orderId = uuidv4();
-      const orderCode = uuidv4().slice(0, 8).toUpperCase();
+      const orderCode = customOrderCode || uuidv4().slice(0, 8).toUpperCase();
       
       const newOrder = {
         orderCode,
@@ -187,11 +187,18 @@ export const OrderProvider = ({ children }) => {
         return;
       }
 
-      // Update Firestore (listener sẽ tự động update state)
-      await updateDocument(COLLECTIONS.ORDERS, orderId, {
+      const updateData = {
         status: newStatus,
         updatedAt: new Date().toISOString(),
-      });
+      };
+
+      // Add completedAt timestamp if status is completed
+      if (newStatus === 'completed') {
+        updateData.completedAt = new Date().toISOString();
+      }
+
+      // Update Firestore (listener sẽ tự động update state)
+      await updateDocument(COLLECTIONS.ORDERS, orderId, updateData);
 
       // ✅ Tự động tích điểm khi admin duyệt đơn hoàn thành
       if (newStatus === 'completed' && loyaltyAddPointsCallback) {

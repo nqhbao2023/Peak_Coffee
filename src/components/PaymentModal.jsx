@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, CreditCard, Banknote, QrCode, Copy, Check, Smartphone, ArrowRight, Sparkles, Clock, User, Phone, Edit2, CheckCircle2 } from 'lucide-react';
+import { X, CreditCard, Banknote, QrCode, Copy, Check, Smartphone, ArrowRight, Sparkles, Clock, User, Phone, Edit2, CheckCircle2, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDebt } from '../contexts/DebtContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,7 @@ const PaymentModal = ({ isOpen, onClose, total, orderCode, onConfirm, cartItems 
   const [copied, setCopied] = useState(false);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false); // Add loading state
   const [isEditingDebtInfo, setIsEditingDebtInfo] = useState(false); // Cho phép chỉnh sửa nếu mua hộ
   const { createDebtOrder } = useDebt();
   const { user } = useAuth();
@@ -63,43 +64,74 @@ const PaymentModal = ({ isOpen, onClose, total, orderCode, onConfirm, cartItems 
     if (navigator.vibrate) navigator.vibrate(50);
   };
 
-  const handleConfirm = () => {
-    if (paymentMethod === 'debt') {
-      // Kiểm tra đăng nhập
-      if (!user) {
-        toast.error('⚠️ Vui lòng đăng nhập để sử dụng tính năng ghi nợ!', {
-          duration: 3000,
-          icon: '🔐'
-        });
-        return;
-      }
+  // Safe mounted check
+  const mountedRef = useRef(true);
+  useEffect(() => {
+     return () => { mountedRef.current = false; };
+  }, []);
 
-      // Validate customer info
-      if (!customerName.trim() || !customerPhone.trim()) {
-        toast.error('Vui lòng nhập đầy đủ thông tin khách hàng');
-        return;
-      }
-      
-      // Validate phone number (basic)
-      if (customerPhone.length < 10) {
-        toast.error('Số điện thoại không hợp lệ');
-        return;
-      }
+  const handleConfirm = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
 
-      // Create debt order
-      const debtOrder = createDebtOrder({
-        orderCode,
-        customerName: customerName.trim(),
-        customerPhone: customerPhone.trim(),
-        items: cartItems || [],
-        total
-      });
+    try {
+      if (paymentMethod === 'debt') {
+        // Kiểm tra đăng nhập
+        if (!user) {
+          toast.error('⚠️ Vui lòng đăng nhập để sử dụng tính năng ghi nợ!', {
+            duration: 3000,
+            icon: '🔐'
+          });
+          setIsProcessing(false);
+          return;
+        }
 
-      if (debtOrder) {
-        onConfirm('debt');
+        // Validate customer info
+        if (!customerName.trim() || !customerPhone.trim()) {
+          toast.error('Vui lòng nhập đầy đủ thông tin khách hàng');
+          setIsProcessing(false);
+          return;
+        }
+        
+        // Validate phone number (basic)
+        if (customerPhone.length < 10) {
+          toast.error('Số điện thoại không hợp lệ');
+          setIsProcessing(false);
+          return;
+        }
+
+        // Create debt order - WAIT FOR ASYNC FIRESTORE
+        let debtOrder;
+        try {
+          debtOrder = await createDebtOrder({
+            orderCode,
+            customerName: customerName.trim(),
+            customerPhone: customerPhone.trim(),
+            items: cartItems || [],
+            total: Number(total) // Ensure number
+          });
+        } catch (error) {
+          console.error('Failed to create debt order:', error);
+          // Error is already toasted in context
+          setIsProcessing(false);
+          return;
+        }
+
+        if (debtOrder) {
+          // Await logic xử lý tiếp theo từ App
+          await onConfirm('debt');
+        }
+      } else {
+        await onConfirm(paymentMethod);
       }
-    } else {
-      onConfirm(paymentMethod);
+    } catch (error) {
+      console.error("Confirmation processing error:", error);
+      toast.error("Có lỗi xảy ra. Vui lòng thử lại.");
+    } finally {
+      // Chỉ tắt loading nếu component còn mounted
+      if (mountedRef.current) {
+         setIsProcessing(false);
+      }
     }
   };
 
@@ -496,11 +528,25 @@ const PaymentModal = ({ isOpen, onClose, total, orderCode, onConfirm, cartItems 
             <motion.button 
               whileTap={{ scale: 0.98 }}
               onClick={handleConfirm}
-              className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-4 rounded-2xl font-black text-lg shadow-2xl shadow-orange-300/50 hover:shadow-orange-400/50 transition-all flex items-center justify-center gap-3 group"
+              disabled={isProcessing}
+              className={`w-full bg-gradient-to-r ${
+                isProcessing ? 'from-stone-400 to-stone-400' : 'from-orange-500 to-red-500'
+              } text-white py-4 rounded-2xl font-black text-lg shadow-2xl ${
+                isProcessing ? '' : 'shadow-orange-300/50 hover:shadow-orange-400/50'
+              } transition-all flex items-center justify-center gap-3 group`}
             >
-              <Sparkles className="fill-white group-hover:animate-spin" size={20} />
-              XÁC NHẬN ĐẶT HÀNG
-              <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
+              {isProcessing ? (
+                <>
+                   <Loader2 className="animate-spin" size={20} />
+                   ĐANG XỬ LÝ...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="fill-white group-hover:animate-spin" size={20} />
+                  XÁC NHẬN ĐẶT HÀNG
+                  <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
+                </>
+              )}
             </motion.button>
           </div>
         </motion.div>

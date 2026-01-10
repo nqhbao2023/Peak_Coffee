@@ -299,7 +299,15 @@ const AdminDashboard = ({ isOpen, onClose }) => {
                         order={order}
                         actionButton={
                            <div className="flex-1 text-center py-2 text-xs font-bold text-stone-400 bg-stone-100 rounded-lg">
-                             Đã hoàn thành lúc {new Date(order.updatedAt || order.createdAt).toLocaleTimeString('vi-VN')}
+                             Đã hoàn thành lúc {(() => {
+                               const dateStr = order.completedAt || order.updatedAt || order.createdAt;
+                               if (!dateStr) return '---';
+                               try {
+                                 return new Date(dateStr).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                               } catch (e) {
+                                 return '---';
+                               }
+                             })()}
                            </div>
                         }
                       />

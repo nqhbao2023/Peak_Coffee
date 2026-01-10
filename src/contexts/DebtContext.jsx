@@ -1,124 +1,121 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import toast from 'react-hot-toast';
+import { 
+  COLLECTIONS, 
+  setDocument, 
+  updateDocument, 
+  deleteDocument,
+  listenToCollection,
+  createDocument,
+  getDocument 
+} from '../firebase/firestore';
 
 const DebtContext = createContext();
 
 export const DebtProvider = ({ children }) => {
   const [customers, setCustomers] = useState([]);
   const [debtOrders, setDebtOrders] = useState([]);
-  const [transactionHistory, setTransactionHistory] = useState([]); // NEW: Lịch sử giao dịch
+  const [transactionHistory, setTransactionHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load từ LocalStorage
+  // Load data từ Firestore với realtime listeners
   useEffect(() => {
-    const savedCustomers = localStorage.getItem('peak_customers');
-    const savedDebtOrders = localStorage.getItem('peak_debt_orders');
-    const savedHistory = localStorage.getItem('peak_transaction_history');
+    const unsubCustomers = listenToCollection(COLLECTIONS.CUSTOMERS, (data) => {
+      setCustomers(data);
+    });
+
+    const unsubDebtOrders = listenToCollection(COLLECTIONS.DEBT_ORDERS, (data) => {
+      // Sort client-side
+      setDebtOrders(data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+    });
+
+    const unsubTransactions = listenToCollection(COLLECTIONS.DEBT_TRANSACTIONS, (data) => {
+       setTransactionHistory(data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
+    });
+
+    setIsLoading(false);
     
-    if (savedCustomers) {
-      try {
-        setCustomers(JSON.parse(savedCustomers));
-      } catch (e) {
-        console.error('Error loading customers:', e);
-      }
-    }
-    if (savedDebtOrders) {
-      try {
-        setDebtOrders(JSON.parse(savedDebtOrders));
-      } catch (e) {
-        console.error('Error loading debt orders:', e);
-      }
-    }
-    if (savedHistory) {
-      try {
-        setTransactionHistory(JSON.parse(savedHistory));
-      } catch (e) {
-        console.error('Error loading history:', e);
-      }
-    }
+    return () => {
+      if (unsubCustomers) unsubCustomers();
+      if (unsubDebtOrders) unsubDebtOrders();
+      if (unsubTransactions) unsubTransactions();
+    };
   }, []);
 
-  // Lưu vào LocalStorage
-  useEffect(() => {
-    localStorage.setItem('peak_customers', JSON.stringify(customers));
-  }, [customers]);
-
-  useEffect(() => {
-    localStorage.setItem('peak_debt_orders', JSON.stringify(debtOrders));
-  }, [debtOrders]);
-
-  useEffect(() => {
-    localStorage.setItem('peak_transaction_history', JSON.stringify(transactionHistory));
-  }, [transactionHistory]);
-
   // Tạo đơn hàng ghi nợ
-  const createDebtOrder = (orderData) => {
+  const createDebtOrder = async (orderData) => {
     const { customerName, customerPhone, items, total, orderCode } = orderData;
+    const orderId = `DEBT_${uuidv4()}`;
 
     const newOrder = {
-      id: `DEBT_${Date.now()}`,
+      id: orderId,
       orderCode,
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
       items,
       total,
-      paid: 0, // Số tiền đã trả
-      remaining: total, // Số tiền còn nợ
-      status: 'DEBT', // DEBT (chưa trả hết), PAID (đã thanh toán đủ)
+      paid: 0,
+      remaining: total,
+      status: 'DEBT',
       createdAt: new Date().toISOString(),
       paidAt: null,
-      paymentHistory: [], // Lịch sử thanh toán từng phần
+      paymentHistory: [],
     };
 
-    setDebtOrders(prev => [newOrder, ...prev]);
+    try {
+      await setDocument(COLLECTIONS.DEBT_ORDERS, orderId, newOrder);
 
-    // Ghi lịch sử giao dịch
-    setTransactionHistory(prev => [{
-      id: `TXN_${Date.now()}`,
-      type: 'CREATE_DEBT',
-      customerName,
-      customerPhone,
-      orderCode,
-      orderId: newOrder.id,
-      amount: total,
-      timestamp: new Date().toISOString(),
-      description: `Ghi nợ đơn #${orderCode} cho ${customerName}`
-    }, ...prev]);
+      const txnId = `TXN_${uuidv4()}`;
+      await setDocument(COLLECTIONS.DEBT_TRANSACTIONS, txnId, {
+        id: txnId,
+        type: 'CREATE_DEBT',
+        customerName,
+        customerPhone,
+        orderCode,
+        orderId: orderId,
+        amount: total,
+        timestamp: new Date().toISOString(),
+        description: `Ghi nợ đơn #${orderCode} cho ${customerName}`
+      });
 
-    // Cập nhật thông tin khách hàng
-    setCustomers(prev => {
-      const existingIndex = prev.findIndex(c => c.phone === customerPhone);
+      const existingCustomer = customers.find(c => c.phone === customerPhone);
       
-      if (existingIndex !== -1) {
-        // Khách cũ
-        const updated = [...prev];
-        updated[existingIndex] = {
-          ...updated[existingIndex],
-          totalDebt: updated[existingIndex].totalDebt + total,
-          orderCount: updated[existingIndex].orderCount + 1,
+      const debtAmount = Number(total);
+
+      if (existingCustomer) {
+        await updateDocument(COLLECTIONS.CUSTOMERS, existingCustomer.id, {
+          totalDebt: (Number(existingCustomer.totalDebt) || 0) + debtAmount,
+          orderCount: (existingCustomer.orderCount || 0) + 1,
           lastOrderDate: new Date().toISOString(),
-          orders: [newOrder.id, ...updated[existingIndex].orders],
-        };
-        return updated;
+          orders: [orderId, ...(existingCustomer.orders || [])],
+        });
       } else {
-        // Khách mới
-        return [...prev, {
+        const newCustomerId = `CUST_${customerPhone}`;
+        await setDocument(COLLECTIONS.CUSTOMERS, newCustomerId, {
+          id: newCustomerId,
           phone: customerPhone,
           name: customerName,
-          totalDebt: total,
+          totalDebt: debtAmount,
           totalPaid: 0,
           orderCount: 1,
-          orders: [newOrder.id],
+          orders: [orderId],
           createdAt: new Date().toISOString(),
           lastOrderDate: new Date().toISOString(),
           lastPaymentDate: null,
-        }];
+        });
       }
-    });
 
-    return newOrder;
+      return newOrder;
+    } catch (error) {
+      console.error('❌ Error creating debt order:', error);
+      toast.error('Lỗi khi tạo đơn nợ!');
+      return null;
+    }
   };
 
   // Thanh toán từng phần hoặc toàn bộ
-  const payDebt = (orderId, amount) => {
+  const payDebt = async (orderId, amount) => {
     const order = debtOrders.find(o => o.id === orderId);
     if (!order || order.status === 'PAID') return false;
 
@@ -127,64 +124,56 @@ export const DebtProvider = ({ children }) => {
     const newRemaining = order.total - newPaid;
     const isFullyPaid = newRemaining === 0;
 
-    // Tạo record thanh toán
     const payment = {
-      id: `PAY_${Date.now()}`,
+      id: `PAY_${uuidv4()}`,
       amount: paymentAmount,
       paidAt: new Date().toISOString(),
     };
 
-    // Cập nhật đơn hàng
-    setDebtOrders(prev =>
-      prev.map(o =>
-        o.id === orderId
-          ? {
-              ...o,
-              paid: newPaid,
-              remaining: newRemaining,
-              status: isFullyPaid ? 'PAID' : 'DEBT',
-              paidAt: isFullyPaid ? new Date().toISOString() : o.paidAt,
-              paymentHistory: [...o.paymentHistory, payment],
-            }
-          : o
-      )
-    );
+    try {
+      await updateDocument(COLLECTIONS.DEBT_ORDERS, orderId, {
+        paid: newPaid,
+        remaining: newRemaining,
+        status: isFullyPaid ? 'PAID' : 'DEBT',
+        paidAt: isFullyPaid ? new Date().toISOString() : order.paidAt,
+        paymentHistory: [...(order.paymentHistory || []), payment],
+      });
 
-    // Ghi lịch sử giao dịch
-    setTransactionHistory(prev => [{
-      id: `TXN_${Date.now()}`,
-      type: isFullyPaid ? 'PAY_FULL' : 'PAY_PARTIAL',
-      customerName: order.customerName,
-      customerPhone: order.customerPhone,
-      orderCode: order.orderCode,
-      orderId: order.id,
-      amount: paymentAmount,
-      remaining: newRemaining,
-      timestamp: new Date().toISOString(),
-      description: isFullyPaid 
-        ? `Thanh toán đủ đơn #${order.orderCode} (${paymentAmount.toLocaleString()}đ)`
-        : `Thanh toán từng phần đơn #${order.orderCode} (${paymentAmount.toLocaleString()}đ, còn ${newRemaining.toLocaleString()}đ)`
-    }, ...prev]);
+      const txnId = `TXN_${uuidv4()}`;
+      await setDocument(COLLECTIONS.DEBT_TRANSACTIONS, txnId, {
+        id: txnId,
+        type: isFullyPaid ? 'PAY_FULL' : 'PAY_PARTIAL',
+        customerName: order.customerName,
+        customerPhone: order.customerPhone,
+        orderCode: order.orderCode,
+        orderId: order.id,
+        amount: paymentAmount,
+        remaining: newRemaining,
+        timestamp: new Date().toISOString(),
+        description: isFullyPaid 
+          ? `Thanh toán đủ đơn #${order.orderCode} (${paymentAmount.toLocaleString()}đ)`
+          : `Thanh toán từng phần đơn #${order.orderCode} (${paymentAmount.toLocaleString()}đ, còn ${newRemaining.toLocaleString()}đ)`
+      });
 
-    // Cập nhật công nợ khách hàng
-    setCustomers(prev =>
-      prev.map(c =>
-        c.phone === order.customerPhone
-          ? {
-              ...c,
-              totalDebt: Math.max(0, c.totalDebt - paymentAmount),
-              totalPaid: (c.totalPaid || 0) + paymentAmount,
-              lastPaymentDate: new Date().toISOString(),
-            }
-          : c
-      )
-    );
+      const customer = customers.find(c => c.phone === order.customerPhone);
+      if (customer) {
+        await updateDocument(COLLECTIONS.CUSTOMERS, customer.id, {
+          totalDebt: Math.max(0, (customer.totalDebt || 0) - paymentAmount),
+          totalPaid: (customer.totalPaid || 0) + paymentAmount,
+          lastPaymentDate: new Date().toISOString(),
+        });
+      }
 
-    return { success: true, isFullyPaid, remaining: newRemaining };
+      return { success: true, isFullyPaid, remaining: newRemaining };
+    } catch (error) {
+      console.error('❌ Error paying debt:', error);
+      toast.error('Lỗi khi thanh toán nợ!');
+      return { success: false };
+    }
   };
 
   // Thanh toán toàn bộ nợ của 1 khách (tất cả đơn)
-  const payAllDebtByCustomer = (customerPhone, amount) => {
+  const payAllDebtByCustomer = async (customerPhone, amount) => {
     const customerOrders = debtOrders
       .filter(o => o.customerPhone === customerPhone && o.status === 'DEBT')
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // Trả nợ cũ trước
@@ -196,9 +185,9 @@ export const DebtProvider = ({ children }) => {
       if (remainingAmount <= 0) break;
 
       const payAmount = Math.min(remainingAmount, order.remaining);
-      const result = payDebt(order.id, payAmount);
+      const result = await payDebt(order.id, payAmount);
       
-      if (result.success) {
+      if (result && result.success) {
         paidOrders++;
         remainingAmount -= payAmount;
       }
@@ -229,9 +218,35 @@ export const DebtProvider = ({ children }) => {
   };
 
   // Xóa khách hàng
-  const deleteCustomer = (customerPhone) => {
-    setCustomers(prev => prev.filter(c => c.phone !== customerPhone));
-    setDebtOrders(prev => prev.filter(o => o.customerPhone !== customerPhone));
+  const deleteCustomer = async (customerId) => {
+    try {
+      let targetId = customerId;
+      let targetPhone = '';
+      
+      const foundByPhone = customers.find(c => c.phone === customerId);
+      if (foundByPhone) {
+        targetId = foundByPhone.id;
+        targetPhone = foundByPhone.phone;
+      } else {
+        const c = customers.find(c => c.id === customerId);
+        targetPhone = c?.phone;
+        targetId = c?.id;
+      }
+
+      if (!targetId) return;
+
+      await deleteDocument(COLLECTIONS.CUSTOMERS, targetId);
+      
+      const ordersToDelete = debtOrders.filter(o => o.customerPhone === targetPhone);
+      for (const order of ordersToDelete) {
+         await deleteDocument(COLLECTIONS.DEBT_ORDERS, order.id);
+      }
+      
+      toast.success('Đã xóa khách hàng và dữ liệu nợ');
+    } catch (e) {
+      console.error(e);
+      toast.error('Lỗi khi xóa khách hàng');
+    }
   };
 
   // Thống kê chi tiết
@@ -265,6 +280,7 @@ export const DebtProvider = ({ children }) => {
     customers,
     debtOrders,
     transactionHistory,
+    isLoading,
     createDebtOrder,
     payDebt,
     payAllDebtByCustomer,
