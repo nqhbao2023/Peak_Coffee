@@ -16,6 +16,12 @@ const PaymentModal = ({ isOpen, onClose, total, orderCode, onConfirm, cartItems 
   const { createDebtOrder } = useDebt();
   const { user } = useAuth();
 
+  // Safe mounted check
+  const mountedRef = useRef(true);
+  useEffect(() => {
+     return () => { mountedRef.current = false; };
+  }, []);
+
   // Auto-fill thông tin từ user đăng nhập khi chọn ghi nợ
   useEffect(() => {
     if (paymentMethod === 'debt' && user) {
@@ -63,12 +69,6 @@ const PaymentModal = ({ isOpen, onClose, total, orderCode, onConfirm, cartItems 
     // Vibration feedback
     if (navigator.vibrate) navigator.vibrate(50);
   };
-
-  // Safe mounted check
-  const mountedRef = useRef(true);
-  useEffect(() => {
-     return () => { mountedRef.current = false; };
-  }, []);
 
   const handleConfirm = async () => {
     if (isProcessing) return;
@@ -134,23 +134,6 @@ const PaymentModal = ({ isOpen, onClose, total, orderCode, onConfirm, cartItems 
       }
     }
   };
-
-  // LOCK SCROLL
-  useEffect(() => {
-    if (isOpen) {
-      const scrollY = window.scrollY;
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
-    }
-    return () => {
-      const scrollY = document.body.style.top;
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      window.scrollTo(0, parseInt(scrollY || '0') * -1);
-    };
-  }, [isOpen]);
 
   return createPortal(
     <motion.div 

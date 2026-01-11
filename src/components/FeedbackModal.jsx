@@ -8,6 +8,35 @@ const FeedbackModal = ({ isOpen, onClose }) => {
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // LOCK SCROLL
+  useEffect(() => {
+    if (isOpen) {
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+    } else {
+      // Ensure scroll is unlocked if isOpen becomes false
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      if(scrollY) window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    }
+    return () => {
+       // Cleanup handled mainly when unmounting or changing dependency
+       // Check logic, if isOpen changes to false, effect re-runs.
+       // The cleanup of Previous run (when isOpen was true) runs.
+       const scrollY = document.body.style.top;
+       if(document.body.style.position === 'fixed') {
+         document.body.style.position = '';
+         document.body.style.top = '';
+         document.body.style.width = '';
+         window.scrollTo(0, parseInt(scrollY || '0') * -1);
+       }
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   // Lưu góp ý vào localStorage
@@ -67,23 +96,6 @@ const FeedbackModal = ({ isOpen, onClose }) => {
       onClose();
     }, 800);
   };
-
-  // LOCK SCROLL
-  useEffect(() => {
-    if (isOpen) {
-      const scrollY = window.scrollY;
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
-    }
-    return () => {
-      const scrollY = document.body.style.top;
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      window.scrollTo(0, parseInt(scrollY || '0') * -1);
-    };
-  }, [isOpen]);
 
   return (
     <motion.div 

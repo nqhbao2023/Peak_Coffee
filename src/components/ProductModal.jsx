@@ -9,16 +9,6 @@ const ProductModal = ({ isOpen, onClose, product, onAddToCart }) => {
   const [sugar, setSugar] = useState(true); // true = co duong, false = khong duong
   const [addon, setAddon] = useState(false); // cho nuoc mia + chanh muoi
 
-  // Reset state khi mo modal moi
-  useEffect(() => {
-    if (isOpen) {
-      setQuantity(1);
-      setTemperature('cold');
-      setSugar(true);
-      setAddon(false);
-    }
-  }, [isOpen, product?.id]);
-
   // LOCK SCROLL
   useEffect(() => {
     if (isOpen && product) {

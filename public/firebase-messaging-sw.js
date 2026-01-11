@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 // Firebase Cloud Messaging Service Worker
 // File này phải đặt ở public/ để browser có thể access
 // Docs: https://firebase.google.com/docs/cloud-messaging/js/client

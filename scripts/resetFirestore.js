@@ -1,3 +1,4 @@
+/* eslint-env node */
 // Script để reset Firestore và seed lại data
 // Chạy: node scripts/resetFirestore.js
 

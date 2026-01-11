@@ -12,7 +12,16 @@ const LoginModal = ({ isOpen, onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false); // Loading state
   const { register, login, isPhoneRegistered, getUserByPhone } = useAuth();
 
-  if (!isOpen) return null;
+  const handlePhoneChange = (e) => {
+    const val = e.target.value.replace(/[^0-9]/g, '');
+    setPhone(val);
+    
+    // Reset state immediately if phone is too short
+    if (val.length < 10) {
+      setIsRegistering(false);
+      setName('');
+    }
+  };
 
   // Kiểm tra SĐT khi user nhập xong (sau 500ms không gõ nữa)
   useEffect(() => {
@@ -34,11 +43,42 @@ const LoginModal = ({ isOpen, onClose }) => {
       }, 500);
 
       return () => clearTimeout(timer);
-    } else {
-      setIsRegistering(false);
-      setName('');
     }
   }, [phone, isPhoneRegistered, getUserByPhone]);
+
+  // LOCK SCROLL HOÀN TOÀN
+  useEffect(() => {
+    if (isOpen) {
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+    } else {
+         // Unlock when closed but component still mounted
+         const scrollY = document.body.style.top;
+         if(document.body.style.position === 'fixed') {
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            window.scrollTo(0, parseInt(scrollY || '0') * -1);
+         }
+    }
+    return () => {
+      // Cleanup for unmount
+      const scrollY = document.body.style.top;
+      if(document.body.style.position === 'fixed') {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -102,25 +142,6 @@ const LoginModal = ({ isOpen, onClose }) => {
       setIsSubmitting(false);
     }
   };
-
-  // LOCK SCROLL HOÀN TOÀN
-  useEffect(() => {
-    if (isOpen) {
-      const scrollY = window.scrollY;
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      const scrollY = document.body.style.top;
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      document.body.style.overflow = '';
-      window.scrollTo(0, parseInt(scrollY || '0') * -1);
-    };
-  }, [isOpen]);
 
   return createPortal(
     <motion.div 
@@ -188,7 +209,7 @@ const LoginModal = ({ isOpen, onClose }) => {
               <input
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                onChange={handlePhoneChange}
                 placeholder="0988099125"
                 maxLength={11}
                 className="w-full pl-11 pr-4 py-3 border-2 border-stone-200 rounded-xl focus:border-orange-500 focus:outline-none transition-colors font-medium"

@@ -21,9 +21,14 @@ export const StreakProvider = ({ children }) => {
 
   // Load từ user profile trong Firestore
   useEffect(() => {
+    let currentLastOrderDate = null;
+    let currentStreak = 0;
+
     if (user) {
-      setStreak(user.streakDays || 0);
-      setLastOrderDate(user.lastOrderDate || null);
+      currentStreak = user.streakDays || 0;
+      currentLastOrderDate = user.lastOrderDate || null;
+      setStreak(currentStreak);
+      setLastOrderDate(currentLastOrderDate);
       // orderDates và streakHistory có thể lưu riêng nếu cần
     } else {
       // Chưa login: dùng localStorage
@@ -32,13 +37,30 @@ export const StreakProvider = ({ children }) => {
       const savedOrderDates = localStorage.getItem('peak_order_dates');
       const savedStreakHistory = localStorage.getItem('peak_streak_history');
 
-      if (savedStreak) setStreak(parseInt(savedStreak));
-      if (savedLastOrderDate) setLastOrderDate(savedLastOrderDate);
+      if (savedStreak) currentStreak = parseInt(savedStreak);
+      if (savedLastOrderDate) currentLastOrderDate = savedLastOrderDate;
+      
+      setStreak(currentStreak);
+      setLastOrderDate(currentLastOrderDate);
+
       if (savedOrderDates) setOrderDates(JSON.parse(savedOrderDates));
       if (savedStreakHistory) setStreakHistory(JSON.parse(savedStreakHistory));
     }
 
-    checkStreakBreak();
+    // Check streak break immediately using local values
+    if (currentLastOrderDate) {
+      const last = new Date(currentLastOrderDate);
+      const today = new Date();
+      last.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      const diffTime = today - last;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      
+      // Nếu không phải hôm nay và không phải hôm qua (tức là cách > 1 ngày) -> Reset streak
+      if (diffDays > 1) {
+        setStreak(0);
+      }
+    }
   }, [user]);
 
   // Backup vào LocalStorage (fallback khi chưa login)

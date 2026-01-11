@@ -7,6 +7,23 @@ const StreakModal = ({ isOpen, onClose }) => {
   const { streak, orderDates, STREAK_REWARDS, getNextReward } = useStreak();
   const nextReward = getNextReward();
 
+  // LOCK SCROLL
+  useEffect(() => {
+    if (isOpen) {
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+    }
+    return () => {
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   // Lấy 30 ngày gần nhất để hiển thị calendar
@@ -27,23 +44,6 @@ const StreakModal = ({ isOpen, onClose }) => {
   };
 
   const last30Days = getLast30Days();
-
-  // LOCK SCROLL
-  useEffect(() => {
-    if (isOpen) {
-      const scrollY = window.scrollY;
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
-    }
-    return () => {
-      const scrollY = document.body.style.top;
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      window.scrollTo(0, parseInt(scrollY || '0') * -1);
-    };
-  }, [isOpen]);
 
   return (
     <motion.div 

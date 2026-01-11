@@ -41,7 +41,7 @@ function AppContent() {
   const [usedVoucherInCart, setUsedVoucherInCart] = useState(false);
   const mainRef = useRef(null);
 
-  const { addPoints, useVoucher, vouchers } = useLoyalty();
+  const { addPoints, redeemVoucher, vouchers } = useLoyalty();
   const { createOrder } = useOrders();
   const { user, isAdmin, isLoggedIn } = useAuth();
   const { menuItems, getCategories } = useMenu();
@@ -183,7 +183,7 @@ function AppContent() {
     try {
       // Sử dụng voucher nếu có
       if (usedVoucherInCart && vouchers > 0) {
-        useVoucher();
+        redeemVoucher();
       }
 
       // Tạo đơn hàng - Await here to get real string, not Promise
@@ -395,7 +395,7 @@ function AppContent() {
       <AnimatePresence>
         {selectedProduct && (
           <ProductModal
-            key="product-modal"
+            key={selectedProduct.id}
             isOpen={!!selectedProduct}
             product={selectedProduct}
             onAddToCart={addToCart}

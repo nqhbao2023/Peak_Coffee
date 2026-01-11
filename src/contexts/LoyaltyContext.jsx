@@ -65,7 +65,7 @@ export const LoyaltyProvider = ({ children }) => {
   }, [points, vouchers]); // Re-register khi points/vouchers thay đổi
 
   // Sử dụng voucher (trả về true nếu thành công)
-  const useVoucher = async () => {
+  const redeemVoucher = async () => {
     if (vouchers > 0) {
       const updatedVouchers = vouchers - 1;
       setVouchers(updatedVouchers);
@@ -90,7 +90,7 @@ export const LoyaltyProvider = ({ children }) => {
     points,
     vouchers,
     addPoints,
-    useVoucher,
+    redeemVoucher,
   };
 
   return (

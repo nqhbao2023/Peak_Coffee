@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { TrendingUp, Package, DollarSign, Users, Calendar } from 'lucide-react';
 import { useOrders } from '../contexts/OrderContext';
 import { useMenu } from '../contexts/MenuContext';
@@ -42,8 +42,10 @@ const StatsOverview = () => {
   };
 
   // Recent orders (last 7 days)
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const recentOrders = orders.filter(o => new Date(o.createdAt) >= sevenDaysAgo);
+  const recentOrders = useMemo(() => {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    return orders.filter(o => new Date(o.createdAt) >= sevenDaysAgo);
+  }, [orders]);
 
   return (
     <div className="space-y-6">
