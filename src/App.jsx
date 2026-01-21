@@ -55,10 +55,10 @@ function AppContent() {
       // Chỉ setup FCM cho admin
       if (isAdmin && user) {
         console.log('🔔 Setting up FCM for admin...');
-        
+
         // Request permission và lấy token
         await getFCMToken(user.phone);
-        
+
         // Setup foreground messaging listener
         unsubscribe = setupForegroundMessaging();
       }
@@ -95,34 +95,34 @@ function AppContent() {
       // Vì cartId chứa timestamp (từ ProductModal) nên mỗi lần thêm từ P.Modal là duy nhất
       // Tuy nhiên nếu logic thay đổi sau này, vẫn giữ logic check existing
       const existingIndex = prev.findIndex(i => i.cartId === item.cartId);
-      
+
       // Loại bỏ thuộc tính tạm 'addQuantity' trước khi lưu vào state
       // eslint-disable-next-line no-unused-vars
       const { addQuantity, ...itemToSave } = item;
 
       if (existingIndex > -1) {
         const updated = [...prev];
-        updated[existingIndex] = { 
-          ...updated[existingIndex], 
-          quantity: updated[existingIndex].quantity + quantityToAdd 
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          quantity: updated[existingIndex].quantity + quantityToAdd
         };
         return updated;
       }
       return [...prev, { ...itemToSave, quantity: quantityToAdd }];
     });
-    
+
     // Toast notification - Hiển thị số lượng đã thêm
     toast.success(
-      quantityToAdd > 1 
-        ? `Đã thêm ${quantityToAdd} món vào giỏ!` 
-        : 'Đã thêm vào giỏ hàng!', 
+      quantityToAdd > 1
+        ? `Đã thêm ${quantityToAdd} món vào giỏ!`
+        : 'Đã thêm vào giỏ hàng!',
       {
         duration: 2000,
         position: 'top-center',
         icon: '🛒',
       }
     );
-    
+
     // Vibration feedback cho mobile
     if (navigator.vibrate) navigator.vibrate(50);
   };
@@ -166,11 +166,11 @@ function AppContent() {
 
     // Tạo mã đơn hàng tạm thời (sẽ được tạo chính thức khi confirm payment)
     const tempOrderCode = Date.now().toString().slice(-8).toUpperCase();
-    
+
     setOrderCodeForPayment(tempOrderCode);
     setTotalForPayment(total);
     setUsedVoucherInCart(useVoucherFlag);
-    
+
     // Đóng cart, mở payment
     setIsCartOpen(false);
     setIsPaymentOpen(true);
@@ -189,10 +189,10 @@ function AppContent() {
       // Tạo đơn hàng - Await here to get real string, not Promise
       // Use logic consistent with Debt creation: use existing orderCodeForPayment if available
       const newOrderCode = await createOrder(
-        cartItems, 
-        totalForPayment, 
-        paymentMethod, 
-        usedVoucherInCart, 
+        cartItems,
+        totalForPayment,
+        paymentMethod,
+        usedVoucherInCart,
         orderCodeForPayment // Pass the pre-generated code (matches Debt Record)
       );
 
@@ -201,25 +201,25 @@ function AppContent() {
 
       // ✅ TĂNG STREAK khi đặt món
       const streakResult = addStreak();
-      
+
       // Xóa giỏ hàng
       setCartItems([]);
       setIsPaymentOpen(false);
 
       // Toast notification
       const isDebt = paymentMethod === 'debt';
-      const title = isDebt 
-          ? `✅ Đã ghi nợ cho ${user?.name || 'Khách hàng'}!` 
-          : 'Đặt hàng thành công! 🎉';
+      const title = isDebt
+        ? `✅ Đã ghi nợ cho ${user?.name || 'Khách hàng'}!`
+        : 'Đặt hàng thành công! 🎉';
 
       toast.success(
         <div>
           <p className="font-bold">{title}</p>
           <p className="text-xs mt-1">Mã đơn: #{newOrderCode}</p>
           {!isDebt && (
-             <p className="text-xs mt-1 text-stone-500">
+            <p className="text-xs mt-1 text-stone-500">
               Điểm thưởng sẽ được cộng sau khi đơn hoàn thành
-             </p>
+            </p>
           )}
           {streakResult.success && streakResult.message && (
             <p className="text-xs mt-1 text-orange-600 font-bold">
@@ -283,31 +283,35 @@ function AppContent() {
   };
 
   return (
-    <div className='min-h-screen bg-stone-50 font-sans text-stone-900 pb-24 selection:bg-orange-200 selection:text-orange-900 will-change-scroll'>
+    <div className='min-h-screen bg-gradient-to-b from-coffee-50 via-white to-coffee-50 font-sans text-coffee-premium pb-24 selection:bg-brand-earth/20 selection:text-brand-earth will-change-scroll'>
       {/* Toast Container - Limit toasts to prevent freezing */}
-      <Toaster 
-        position="bottom-center"
+      <Toaster
+        position="top-center"
         reverseOrder={false}
         gutter={8}
-        limit={3} // Giới hạn số lượng toast hiển thị cùng lúc
+        limit={2} // Limit to 2 to prevent stacking too much
         containerStyle={{
-          bottom: 120,
+          top: 80,
+          bottom: 'auto',
         }}
         toastOptions={{
-          className: 'font-sans',
-          duration: 2000,
+          className: 'font-sans glass shadow-lg active:scale-95 transition-transform',
+          duration: 1500, // Faster (1.5s)
           style: {
             borderRadius: '16px',
             fontWeight: '600',
             padding: '12px 20px',
             fontSize: '14px',
             maxWidth: '90vw',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            boxShadow: '0 10px 30px -5px rgba(0,0,0,0.15)',
             cursor: 'pointer',
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255,255,255,0.3)',
           },
           success: {
             iconTheme: {
-              primary: '#10b981',
+              primary: '#C25E00',
               secondary: '#fff',
             },
           },
@@ -320,8 +324,8 @@ function AppContent() {
         }}
       />
 
-      <Header 
-        cartCount={totalItems} 
+      <Header
+        cartCount={totalItems}
         onCartClick={() => setIsCartOpen(true)}
         onOrderHistoryClick={() => setIsOrderHistoryOpen(true)}
         onAdminClick={() => setIsAdminOpen(true)}
@@ -330,28 +334,28 @@ function AppContent() {
 
       <Hero />
 
-      <CategoryFilter 
-        categories={categories} 
-        activeCategory={activeCategory} 
-        onSelectCategory={handleCategoryChange} 
+      <CategoryFilter
+        categories={categories}
+        activeCategory={activeCategory}
+        onSelectCategory={handleCategoryChange}
       />
 
-      <main ref={mainRef} className='w-full max-w-md mx-auto px-4 mt-6 space-y-4 min-h-[50vh] will-change-scroll pb-32'>
-        <div className='flex items-center justify-between mb-4'>
-          <h3 className='font-black text-stone-800 text-lg flex items-center gap-2'>
+      <main ref={mainRef} className='w-full max-w-md mx-auto px-4 mt-8 space-y-6 min-h-[50vh] will-change-scroll pb-32'>
+        <div className='flex items-center justify-between mb-2'>
+          <h3 className='font-black text-coffee-premium text-xl flex items-center gap-2 tracking-tight'>
             {activeCategory === 'Tất cả' ? 'THỰC ĐƠN HÔM NAY' : activeCategory.toUpperCase()}
           </h3>
-          <span className='text-xs font-medium text-stone-400 bg-stone-100 px-2 py-1 rounded-full'>
+          <span className='text-xs font-bold text-coffee-500 bg-white/50 px-3 py-1.5 rounded-full border border-white/50 shadow-sm'>
             {filteredMenu.length} món
           </span>
         </div>
-        
+
         {/* Grid layout - Optimized with contain */}
-        <div className={`grid gap-3 contain-layout ${activeCategory === 'Nước Ngọt' ? 'grid-cols-1' : 'grid-cols-1'}`}>
+        <div className={`grid gap-5 contain-layout grid-cols-1`}>
           {filteredMenu.map((item, index) => (
-            <MenuItem 
-              key={item.id} 
-              item={item} 
+            <MenuItem
+              key={item.id}
+              item={item}
               onAddToCart={addToCart}
               onOpenModal={setSelectedProduct}
               priority={index < 20} // Tăng số lượng ảnh load eager để tránh warning intervention
@@ -380,7 +384,7 @@ function AppContent() {
 
       <AnimatePresence>
         {isCartOpen && (
-          <CartModal 
+          <CartModal
             key="cart-modal"
             isOpen={isCartOpen}
             cartItems={cartItems}

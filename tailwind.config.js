@@ -16,13 +16,15 @@ export default {
           500: '#A6825D',
           600: '#8C6645',
           700: '#6B4C35',
-          800: '#4E3629',
-          900: '#36261F',
+          800: '#4E3629',    // Existing dark
+          900: '#36261F',    // Existing darker
           950: '#1F1410',
+          premium: '#4B3621', // NEW: Premium Coffee Brown
         },
         brand: {
-          red: '#C8102E', // Highlands Red style
+          red: '#C8102E',
           dark: '#5B0909',
+          earth: '#C25E00', // NEW: Earth Orange
         }
       },
       transitionDuration: {
