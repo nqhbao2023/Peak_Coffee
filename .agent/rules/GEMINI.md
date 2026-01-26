@@ -1,3 +1,7 @@
+---
+trigger: always_on
+---
+
 # GEMINI.md - Maestro Configuration
 
 > **Version 4.0** - Maestro AI Development Orchestrator
@@ -49,12 +53,17 @@ Agent activated → Check frontmatter "skills:" field
 
 ## TIER 0: UNIVERSAL RULES (Always Active)
 
-### 🌐 Language Handling
+### 🌐 Language Handling (VIETNAMESE MODE)
 
-When user's prompt is NOT in English:
-1. **Internally translate** for better comprehension
-2. **Respond in user's language** - match their communication
-3. **Code comments/variables** remain in English
+**MANDATORY: ALWAYS RESPOND IN VIETNAMESE (Tiếng Việt).**
+
+1. **Thinking Process:** You must think/reason in English for maximum logic capability, but the final output to the user MUST be in Vietnamese.
+2. **Code:**
+   - Variable names, functions, comments: **KEEP IN ENGLISH** (Standard Practice).
+   - String literals/UI text: **VIETNAMESE**.
+3. **Behavior:** Use natural, professional Vietnamese tone (xưng "tôi", gọi user là "bạn").
+
+*Exception: Only use English if the user explicitly asks "Speak English".*
 
 ### 🧹 Clean Code (Global Mandatory)
 

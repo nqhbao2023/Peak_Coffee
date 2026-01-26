@@ -20,9 +20,6 @@ import PaymentModal from './components/PaymentModal';
 import OrderHistory from './components/OrderHistory';
 import LoginModal from './components/LoginModal';
 import AdminDashboard from './components/AdminDashboard';
-import FeedbackModal from './components/FeedbackModal';
-import StreakBadge from './components/StreakBadge';
-import StreakModal from './components/StreakModal';
 
 function AppContent() {
   const [cartItems, setCartItems] = useState([]);
@@ -34,8 +31,6 @@ function AppContent() {
   const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-  const [isStreakOpen, setIsStreakOpen] = useState(false);
   const [orderCodeForPayment, setOrderCodeForPayment] = useState('');
   const [totalForPayment, setTotalForPayment] = useState(0);
   const [usedVoucherInCart, setUsedVoucherInCart] = useState(false);
@@ -265,13 +260,13 @@ function AppContent() {
 
   // Prevent body scroll when modal is open
   useEffect(() => {
-    if (isCartOpen || selectedProduct || isPaymentOpen || isOrderHistoryOpen || isLoginOpen || isAdminOpen || isFeedbackOpen || isStreakOpen) {
+    if (isCartOpen || selectedProduct || isPaymentOpen || isOrderHistoryOpen || isLoginOpen || isAdminOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
     return () => { document.body.style.overflow = 'unset'; };
-  }, [isCartOpen, selectedProduct, isPaymentOpen, isOrderHistoryOpen, isLoginOpen, isAdminOpen, isFeedbackOpen, isStreakOpen]);
+  }, [isCartOpen, selectedProduct, isPaymentOpen, isOrderHistoryOpen, isLoginOpen, isAdminOpen]);
 
   // Scroll to top when category changes - INSTANT for better performance
   const handleCategoryChange = (category) => {
@@ -340,12 +335,12 @@ function AppContent() {
         onSelectCategory={handleCategoryChange}
       />
 
-      <main ref={mainRef} className='w-full max-w-md mx-auto px-4 mt-8 space-y-6 min-h-[50vh] will-change-scroll pb-32'>
+      <main ref={mainRef} className='w-full max-w-md mx-auto px-4 mt-8 space-y-6 min-h-[50vh] will-change-scroll pb-24'>
         <div className='flex items-center justify-between mb-2'>
           <h3 className='font-black text-coffee-premium text-xl flex items-center gap-2 tracking-tight'>
             {activeCategory === 'Tất cả' ? 'THỰC ĐƠN HÔM NAY' : activeCategory.toUpperCase()}
           </h3>
-          <span className='text-xs font-bold text-coffee-500 bg-white/50 px-3 py-1.5 rounded-full border border-white/50 shadow-sm'>
+          <span className='text-xs font-bold text-coffee-700 bg-white/60 px-3 py-1.5 rounded-full border border-white/50 shadow-sm'>
             {filteredMenu.length} món
           </span>
         </div>
@@ -380,7 +375,7 @@ function AppContent() {
         </button>
       )}
 
-      <BottomNav onFeedbackClick={() => setIsFeedbackOpen(true)} />
+      <BottomNav />
 
       <AnimatePresence>
         {isCartOpen && (
@@ -447,26 +442,6 @@ function AppContent() {
             key="admin-dashboard"
             isOpen={isAdminOpen}
             onClose={() => setIsAdminOpen(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {isFeedbackOpen && (
-          <FeedbackModal
-            key="feedback-modal"
-            isOpen={isFeedbackOpen}
-            onClose={() => setIsFeedbackOpen(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {isStreakOpen && (
-          <StreakModal
-            key="streak-modal"
-            isOpen={isStreakOpen}
-            onClose={() => setIsStreakOpen(false)}
           />
         )}
       </AnimatePresence>

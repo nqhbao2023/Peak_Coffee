@@ -1,13 +1,9 @@
 import React from 'react';
-import { Coffee, ShoppingCart, MapPin, Package, Shield, User, LogOut, RefreshCw } from 'lucide-react';
+import { Coffee, ShoppingCart, MapPin, Package, Shield, User, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Header = ({ cartCount, onCartClick, onOrderHistoryClick, onAdminClick, onLoginClick, streakBadge }) => {
   const { user, isAdmin, logout } = useAuth();
-
-  const handleReload = () => {
-    window.location.reload();
-  };
 
   return (
     <header className="glass sticky top-0 z-50 transition-all duration-300" style={{ contain: 'layout style paint' }}>
@@ -28,16 +24,8 @@ const Header = ({ cartCount, onCartClick, onOrderHistoryClick, onAdminClick, onL
           </div>
         </div>
 
-        {/* ACTIONS */}
+        {/* ACTIONS - Simplified: No Reload button */}
         <div className="flex items-center gap-2">
-          {/* Reload Button */}
-          <button
-            onClick={handleReload}
-            className="p-2.5 bg-white/50 text-coffee-600 hover:bg-white hover:text-brand-earth rounded-xl active:scale-95 transition-all duration-200 shadow-sm"
-            title="Tải lại trang"
-          >
-            <RefreshCw size={18} strokeWidth={2} />
-          </button>
 
           {/* Admin Button */}
           {isAdmin && (

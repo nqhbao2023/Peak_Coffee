@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Plus, Flame, Snowflake } from 'lucide-react';
 
-const MenuItem = ({ item, onAddToCart, onOpenModal, priority = false }) => {
+const MenuItem = memo(({ item, onAddToCart, onOpenModal, priority = false }) => {
   // Neu la mon "quick add" (nuoc ngot) -> them thang vao gio
   const handleClick = () => {
     if (item.isQuickAdd) {
@@ -40,7 +40,7 @@ const MenuItem = ({ item, onAddToCart, onOpenModal, priority = false }) => {
 
         <div className="flex-1 min-w-0">
           <h4 className="font-bold text-coffee-premium text-base leading-tight truncate">{item.name}</h4>
-          <span className="text-brand-earth font-black text-lg block">
+          <span className="text-brand-earth font-black text-lg block drop-shadow-sm">
             {item.price.toLocaleString()}đ
           </span>
         </div>
@@ -70,8 +70,8 @@ const MenuItem = ({ item, onAddToCart, onOpenModal, priority = false }) => {
           height="128"
           decoding="async"
         />
-        {/* Category Badge - Minimalist */}
-        <div className="absolute top-0 left-0 bg-white/90 backdrop-blur-md px-3 py-1 rounded-br-xl text-[10px] font-bold text-coffee-premium shadow-sm">
+        {/* Category Badge - Improved contrast for outdoor visibility */}
+        <div className="absolute top-0 left-0 bg-white/95 backdrop-blur-md px-3 py-1 rounded-br-xl text-[11px] font-bold text-coffee-premium shadow-sm">
           {item.category.toUpperCase()}
         </div>
 
@@ -91,14 +91,16 @@ const MenuItem = ({ item, onAddToCart, onOpenModal, priority = false }) => {
       <div className="flex flex-col justify-between py-1 flex-1 min-w-0">
         <div>
           <h4 className="font-bold text-coffee-premium text-lg leading-tight truncate pr-2 group-hover:text-brand-earth transition-colors duration-200">{item.name}</h4>
-          <p className="text-xs text-coffee-600 mt-2 line-clamp-2 font-medium leading-relaxed">
+          {/* Improved contrast: text-coffee-700 for better outdoor visibility */}
+          <p className="text-xs text-coffee-700 mt-2 line-clamp-2 font-medium leading-relaxed">
             {item.description}
           </p>
         </div>
 
         <div className="flex justify-between items-end mt-3">
           <div className="flex flex-col">
-            <span className="text-brand-earth font-black text-xl leading-none tracking-tight">
+            {/* Added drop-shadow for better readability in bright light */}
+            <span className="text-brand-earth font-black text-xl leading-none tracking-tight drop-shadow-sm">
               {item.price.toLocaleString()}đ
             </span>
           </div>
@@ -110,6 +112,8 @@ const MenuItem = ({ item, onAddToCart, onOpenModal, priority = false }) => {
       </div>
     </div>
   );
-};
+});
+
+MenuItem.displayName = 'MenuItem';
 
 export default MenuItem;
