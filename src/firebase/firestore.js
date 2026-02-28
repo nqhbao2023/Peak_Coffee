@@ -203,16 +203,26 @@ export const queryDocuments = async (
  * @param {string} collectionName - Tên collection
  * @param {Function} callback - Function nhận dữ liệu mới (data) => {}
  * @param {Array} conditions - Query conditions (optional)
+ * @param {number} limitCount - Giới hạn số documents (optional)
  * @returns {Function} - Unsubscribe function
  */
-export const listenToCollection = (collectionName, callback, conditions = []) => {
+export const listenToCollection = (collectionName, callback, conditions = [], limitCount = null) => {
   try {
     let q = collection(db, collectionName);
     
+    const constraints = [];
     if (conditions.length > 0) {
-      const constraints = conditions.map(([field, operator, value]) =>
-        where(field, operator, value)
-      );
+      conditions.forEach(([field, operator, value]) => {
+        constraints.push(where(field, operator, value));
+      });
+    }
+
+    // Thêm limit nếu có
+    if (limitCount && limitCount > 0) {
+      constraints.push(limit(limitCount));
+    }
+
+    if (constraints.length > 0) {
       q = query(q, ...constraints);
     }
     

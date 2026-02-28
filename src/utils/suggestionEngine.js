@@ -1,6 +1,7 @@
 // ============================================
 // PEAK COFFEE - HỆ THỐNG GỢI Ý THÔNG MINH
 // Logic: Phân tích giỏ hàng → Đề xuất món cụ thể để tối ưu giảm giá
+// + Gợi ý dựa trên lịch sử đặt hàng (upsell)
 // ============================================
 
 /**
@@ -8,6 +9,7 @@
  * 1. Món đang có trong giỏ (cafe thì gợi ý thêm nước giải khát)
  * 2. Đạt ngưỡng giảm giá (3 ly -5K, 5 ly -10K)
  * 3. Combo phổ biến cho công nhân (rẻ + đủ năng lượng)
+ * 4. Cross-sell: Gợi ý category khác so với giỏ hiện tại
  */
 
 // Định nghĩa các deal giảm giá theo số lượng
@@ -22,6 +24,14 @@ const POPULAR_SUGGESTIONS = [
   { id: 10, name: 'Nước Mía', price: 10000, category: 'Giải Khát', reason: 'Giá rẻ, bổ sung năng lượng' },
   { id: 11, name: 'Coca Cola', price: 10000, category: 'Nước Ngọt', reason: 'Sảng khoái, giá hợp lý' },
   { id: 8, name: 'Nước Chanh', price: 15000, category: 'Giải Khát', reason: 'Thanh mát, vitamin C' },
+];
+
+// Cross-sell rules: Nếu giỏ có category X → gợi ý category Y
+const CROSS_SELL_RULES = [
+  { ifCategory: 'Cà Phê', suggestCategory: 'Giải Khát', reason: 'Kèm ly giải khát mát lành' },
+  { ifCategory: 'Cà Phê', suggestCategory: 'Nước Ngọt', reason: 'Combo cà phê + nước ngọt' },
+  { ifCategory: 'Giải Khát', suggestCategory: 'Cà Phê', reason: 'Thêm ly cà phê tỉnh táo' },
+  { ifCategory: 'Nước Ngọt', suggestCategory: 'Cà Phê', reason: 'Mix thêm cà phê cho đa vị' },
 ];
 
 /**
@@ -62,25 +72,51 @@ export const getSuggestions = (cartItems = [], allMenuItems = []) => {
   let suggestions = [];
   
   if (itemsNeeded > 0 && itemsNeeded <= 3) {
-    // Chỉ gợi ý khi cần thêm 1-3 món (không quá nhiều)
-    suggestions = POPULAR_SUGGESTIONS
+    // Lấy categories đang có trong giỏ
+    const cartCategories = [...new Set(cartItems.map(item => item?.category).filter(Boolean))];
+    
+    // Ưu tiên cross-sell: gợi ý category khác để đa dạng
+    const crossSellItems = [];
+    cartCategories.forEach(cat => {
+      const rules = CROSS_SELL_RULES.filter(r => r.ifCategory === cat);
+      rules.forEach(rule => {
+        const items = allMenuItems.filter(m => 
+          m.category === rule.suggestCategory && 
+          m.isAvailable && 
+          !cartItemIds.includes(m.id)
+        );
+        items.forEach(item => {
+          if (!crossSellItems.find(cs => cs.id === item.id)) {
+            crossSellItems.push({ ...item, reason: rule.reason });
+          }
+        });
+      });
+    });
+
+    // Merge cross-sell + popular, ưu tiên cross-sell
+    const popularFiltered = POPULAR_SUGGESTIONS
       .filter(item => {
-        // Kiểm tra món có tồn tại trong menu và available
         const menuItem = allMenuItems.find(m => m.id === item.id);
         return menuItem && menuItem.isAvailable && !cartItemIds.includes(item.id);
       })
-      .slice(0, itemsNeeded) // Chỉ lấy đủ số món cần
       .map(item => {
         const menuItem = allMenuItems.find(m => m.id === item.id);
-        if (!menuItem) return null; // Guard
-        
-        return {
-          ...menuItem,
-          reason: item.reason,
-          benefit: `Thêm món này để giảm ${nextTier.discount.toLocaleString()}đ`
-        };
+        return menuItem ? { ...menuItem, reason: item.reason } : null;
       })
-      .filter(item => item !== null); // Loại bỏ null
+      .filter(Boolean);
+
+    // Combine: cross-sell trước, popular sau, lấy đủ số lượng cần
+    const combined = [...crossSellItems, ...popularFiltered];
+    const uniqueCombined = combined.filter((item, index) => 
+      combined.findIndex(i => i.id === item.id) === index
+    );
+
+    suggestions = uniqueCombined
+      .slice(0, itemsNeeded)
+      .map(item => ({
+        ...item,
+        benefit: `Thêm món này để giảm ${nextTier.discount.toLocaleString()}đ`,
+      }));
   }
   
   return {
@@ -136,4 +172,61 @@ export const calculateTotal = (cartItems = [], useVoucher = false, mostExpensive
     total,
     currentTier
   };
+};
+
+/**
+ * Gợi ý món cho trang menu dựa trên lịch sử đặt hàng
+ * Dùng để hiển thị "Gợi ý cho bạn" hoặc "Combo tiết kiệm"
+ * @param {Array} orderHistory - Lịch sử đơn hàng
+ * @param {Array} allMenuItems - Toàn bộ menu
+ * @param {number} maxSuggestions - Số lượng gợi ý tối đa
+ * @returns {Array} - Danh sách món gợi ý kèm lý do
+ */
+export const getMenuSuggestions = (orderHistory = [], allMenuItems = [], maxSuggestions = 3) => {
+  if (!Array.isArray(allMenuItems) || allMenuItems.length === 0) return [];
+
+  const availableItems = allMenuItems.filter(item => item.isAvailable);
+
+  // Nếu không có lịch sử → gợi ý Popular
+  if (!Array.isArray(orderHistory) || orderHistory.length === 0) {
+    return POPULAR_SUGGESTIONS
+      .map(ps => {
+        const menuItem = availableItems.find(m => m.id === ps.id);
+        return menuItem ? { ...menuItem, reason: ps.reason, badge: 'Phổ biến' } : null;
+      })
+      .filter(Boolean)
+      .slice(0, maxSuggestions);
+  }
+
+  // Tính tần suất mua từ lịch sử
+  const frequencyMap = {};
+  orderHistory.forEach(order => {
+    if (!order.items) return;
+    order.items.forEach(item => {
+      if (!frequencyMap[item.id]) {
+        frequencyMap[item.id] = { count: 0, lastOrdered: order.createdAt };
+      }
+      frequencyMap[item.id].count += item.quantity;
+      if (order.createdAt > frequencyMap[item.id].lastOrdered) {
+        frequencyMap[item.id].lastOrdered = order.createdAt;
+      }
+    });
+  });
+
+  // Gợi ý dựa trên tần suất cao nhất (món hay mua)
+  const frequentItems = Object.entries(frequencyMap)
+    .sort(([, a], [, b]) => b.count - a.count)
+    .slice(0, maxSuggestions)
+    .map(([id, data]) => {
+      const menuItem = availableItems.find(m => String(m.id) === String(id));
+      if (!menuItem) return null;
+      return {
+        ...menuItem,
+        reason: `Bạn đã đặt ${data.count} lần`,
+        badge: 'Hay đặt',
+      };
+    })
+    .filter(Boolean);
+
+  return frequentItems.length > 0 ? frequentItems : [];
 };

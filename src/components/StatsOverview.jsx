@@ -7,39 +7,43 @@ const StatsOverview = () => {
   const { orders } = useOrders();
   const { menuItems } = useMenu();
 
-  // Calculate statistics
-  const completedOrders = orders.filter(o => o.status === 'completed');
-  const totalRevenue = completedOrders.reduce((sum, order) => sum + order.total, 0);
+  // === Memoize all heavy calculations ===
+  const completedOrders = useMemo(
+    () => orders.filter(o => o.status === 'completed'),
+    [orders]
+  );
+
+  const totalRevenue = useMemo(
+    () => completedOrders.reduce((sum, order) => sum + order.total, 0),
+    [completedOrders]
+  );
+
   const totalOrders = orders.length;
-  
-  // Best selling items - tính từ completed orders
-  const itemStats = {};
-  completedOrders.forEach(order => {
-    order.items.forEach(item => {
-      if (!itemStats[item.id]) {
-        itemStats[item.id] = {
-          name: item.name,
-          quantity: 0,
-          revenue: 0,
-          image: item.image
-        };
-      }
-      itemStats[item.id].quantity += item.quantity;
-      itemStats[item.id].revenue += item.price * item.quantity;
+
+  // Best selling items - computed from completed orders
+  const bestSellers = useMemo(() => {
+    const itemStats = {};
+    completedOrders.forEach(order => {
+      order.items.forEach(item => {
+        if (!itemStats[item.id]) {
+          itemStats[item.id] = { name: item.name, quantity: 0, revenue: 0, image: item.image };
+        }
+        itemStats[item.id].quantity += item.quantity;
+        itemStats[item.id].revenue += item.price * item.quantity;
+      });
     });
-  });
+    return Object.values(itemStats)
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 5);
+  }, [completedOrders]);
 
-  const bestSellers = Object.values(itemStats)
-    .sort((a, b) => b.quantity - a.quantity)
-    .slice(0, 5);
-
-  // Orders by status
-  const statusCounts = {
+  // Orders by status — memoized
+  const statusCounts = useMemo(() => ({
     pending: orders.filter(o => o.status === 'pending').length,
     preparing: orders.filter(o => o.status === 'preparing').length,
     ready: orders.filter(o => o.status === 'ready').length,
-    completed: completedOrders.length
-  };
+    completed: completedOrders.length,
+  }), [orders, completedOrders]);
 
   // Recent orders (last 7 days)
   const recentOrders = useMemo(() => {

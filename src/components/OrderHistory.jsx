@@ -30,9 +30,9 @@ const OrderHistory = ({ isOpen, onClose }) => {
       case 'ready':
         return { icon: CheckCircle, text: 'Sẵn sàng', color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200' };
       case 'completed':
-        return { icon: CheckCircle, text: 'Hoàn thành', color: 'text-stone-400', bg: 'bg-stone-50', border: 'border-stone-200' };
+        return { icon: CheckCircle, text: 'Hoàn thành', color: 'text-coffee-400', bg: 'bg-coffee-50', border: 'border-coffee-200' };
       default:
-        return { icon: Package, text: 'Đơn hàng', color: 'text-stone-600', bg: 'bg-stone-50', border: 'border-stone-200' };
+        return { icon: Package, text: 'Đơn hàng', color: 'text-coffee-600', bg: 'bg-coffee-50', border: 'border-coffee-200' };
     }
   };
 
@@ -67,7 +67,7 @@ const OrderHistory = ({ isOpen, onClose }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-stone-900/60 backdrop-blur-md"
+        className="absolute inset-0 bg-coffee-900/60 backdrop-blur-md"
         onClick={onClose}
       />
 
@@ -81,9 +81,9 @@ const OrderHistory = ({ isOpen, onClose }) => {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-6 pb-4 border-b border-stone-100 flex justify-between items-center bg-white sticky top-0 z-10 shrink-0">
+        <div className="p-6 pb-4 border-b border-coffee-100 flex justify-between items-center bg-white sticky top-0 z-10 shrink-0">
           <div>
-            <h2 className="text-2xl font-black text-stone-800 flex items-center gap-2 tracking-tight">
+            <h2 className="text-2xl font-black text-coffee-premium flex items-center gap-2 tracking-tight">
               <span className="bg-orange-100 p-2 rounded-xl">
                 <Package className="text-orange-600" size={24} />
               </span>
@@ -92,9 +92,9 @@ const OrderHistory = ({ isOpen, onClose }) => {
           </div>
           <button 
             onClick={onClose} 
-            className="w-10 h-10 bg-stone-50 hover:bg-stone-100 rounded-full flex items-center justify-center transition-colors shadow-sm active:scale-90"
+            className="w-10 h-10 bg-coffee-50 hover:bg-coffee-100 rounded-full flex items-center justify-center transition-colors shadow-sm active:scale-90"
           >
-            <X size={20} className="text-stone-500" />
+            <X size={20} className="text-coffee-500" />
           </button>
         </div>
 
@@ -102,11 +102,11 @@ const OrderHistory = ({ isOpen, onClose }) => {
         <div className="flex-1 overflow-y-auto p-4 space-y-3 overscroll-contain">
            {orders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="w-24 h-24 bg-stone-50 rounded-full flex items-center justify-center mb-4">
-                <Package size={40} className="text-stone-300" />
+              <div className="w-24 h-24 bg-coffee-100 rounded-full flex items-center justify-center mb-4">
+                <Package size={40} className="text-coffee-300" />
               </div>
-              <h3 className="font-bold text-lg text-stone-600">Chưa có đơn hàng</h3>
-              <p className="text-stone-400 text-sm mt-1">Các món bạn đặt sẽ hiện ở đây</p>
+              <h3 className="font-bold text-lg text-coffee-600">Chưa có đơn hàng</h3>
+              <p className="text-coffee-400 text-sm mt-1">Các món bạn đặt sẽ hiện ở đây</p>
             </div>
            ) : (
              orders.map((order) => {
@@ -133,17 +133,17 @@ const OrderHistory = ({ isOpen, onClose }) => {
                         </div>
                         <div className="text-left">
                           <div className="flex items-center gap-2">
-                            <span className="font-black text-lg text-stone-800">#{order.orderCode}</span>
+                            <span className="font-black text-lg text-coffee-premium">#{order.orderCode}</span>
                             <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${statusInfo.bg} ${statusInfo.color}`}>
                               {statusInfo.text}
                             </span>
                           </div>
-                          <p className="text-xs font-semibold text-stone-400 mt-0.5">{formatDate(order.createdAt)}</p>
+                          <p className="text-xs font-semibold text-coffee-400 mt-0.5">{formatDate(order.createdAt)}</p>
                         </div>
                       </div>
                       
                       <div className="text-right">
-                         <span className="block font-black text-stone-800 text-lg">{order.total.toLocaleString()}đ</span>
+                         <span className="block font-black text-coffee-premium text-lg">{order.total.toLocaleString()}đ</span>
                       </div>
                     </button>
 
@@ -155,22 +155,22 @@ const OrderHistory = ({ isOpen, onClose }) => {
                           animate={{ height: 'auto', opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.2 }}
-                          className="border-t border-stone-100 bg-stone-50/50"
+                          className="border-t border-coffee-100 bg-coffee-50/50"
                         >
                           <div className="p-4 space-y-3">
                             {/* Items List */}
-                            <div className="bg-white rounded-xl p-3 border border-stone-100 shadow-sm space-y-2">
+                            <div className="bg-white rounded-xl p-3 border border-coffee-100 shadow-sm space-y-2">
                               {order.items.map((item, index) => (
                                 <div key={index} className="flex justify-between items-start text-sm">
                                   <div className="flex gap-2">
                                     <span className="font-bold text-orange-600 bg-orange-50 w-5 h-5 flex items-center justify-center rounded text-xs shrink-0 mt-0.5">
                                       {item.quantity}
                                     </span>
-                                    <span className="text-stone-700 font-medium leading-tight">
+                                    <span className="text-coffee-700 font-medium leading-tight">
                                       {item.displayName || item.name}
                                     </span>
                                   </div>
-                                  <span className="font-bold text-stone-900 shrink-0 ml-4">
+                                  <span className="font-bold text-coffee-premium shrink-0 ml-4">
                                     {(item.finalPrice * item.quantity).toLocaleString()}đ
                                   </span>
                                 </div>
@@ -179,8 +179,8 @@ const OrderHistory = ({ isOpen, onClose }) => {
 
                             {/* Payment Meta */}
                             <div className="flex justify-between items-center px-2">
-                                <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Thanh toán</span>
-                                <span className="text-sm font-bold text-stone-800 bg-white border border-stone-200 px-3 py-1 rounded-lg">
+                                <span className="text-xs font-bold text-coffee-500 uppercase tracking-wider">Thanh toán</span>
+                                <span className="text-sm font-bold text-coffee-premium bg-white border border-coffee-200 px-3 py-1 rounded-lg">
                                   {order.paymentMethod === 'qr' ? '💳 Chuyển khoản' : '💵 Tiền mặt'}
                                 </span>
                             </div>
@@ -197,7 +197,7 @@ const OrderHistory = ({ isOpen, onClose }) => {
                             {order.status === 'completed' && (
                               <button
                                 onClick={() => deleteOrder(order.id)}
-                                className="w-full py-3 bg-white hover:bg-red-50 text-stone-400 hover:text-red-500 border border-stone-200 hover:border-red-200 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 mt-2"
+                                className="w-full py-3 bg-white hover:bg-red-50 text-coffee-400 hover:text-red-500 border border-coffee-200 hover:border-red-200 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 mt-2"
                               >
                                 <Trash2 size={16} />
                                 Xóa lịch sử đơn này

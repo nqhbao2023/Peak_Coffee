@@ -95,16 +95,16 @@ const CartModal = ({ isOpen, onClose, cartItems = [], onUpdateQuantity, onRemove
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-5 border-b border-stone-200 flex justify-between items-center bg-white rounded-t-[2rem]">
-          <h2 className="font-black text-xl text-stone-800 flex items-center gap-2">
+        <div className="p-5 border-b border-coffee-200 flex justify-between items-center bg-white rounded-t-[2rem]">
+          <h2 className="font-black text-xl text-coffee-premium flex items-center gap-2">
             <ShoppingBag className="text-orange-600" />
-            Giỏ hàng <span className="text-stone-400 text-sm font-medium">({cartItems.length} món)</span>
+            Giỏ hàng <span className="text-coffee-400 text-sm font-medium">({cartItems.length} món)</span>
           </h2>
           <button 
             onClick={onClose}
-            className="p-2 hover:bg-stone-100 rounded-full transition-colors"
+            className="p-2 hover:bg-coffee-100 rounded-full transition-colors"
           >
-            <X size={24} className="text-stone-500" />
+            <X size={24} className="text-coffee-500" />
           </button>
         </div>
 
@@ -112,10 +112,10 @@ const CartModal = ({ isOpen, onClose, cartItems = [], onUpdateQuantity, onRemove
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {cartItems.length === 0 ? (
             <div className="text-center py-10">
-              <div className="w-20 h-20 bg-stone-200 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <ShoppingBag size={40} className="text-stone-400" />
+              <div className="w-20 h-20 bg-coffee-200 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <ShoppingBag size={40} className="text-coffee-400" />
               </div>
-              <p className="text-stone-500 font-medium">Chưa có món nào trong giỏ</p>
+              <p className="text-coffee-600 font-medium">Chưa có món nào trong giỏ</p>
               <button 
                 onClick={onClose}
                 className="mt-4 text-orange-600 font-bold text-sm hover:underline"
@@ -125,19 +125,19 @@ const CartModal = ({ isOpen, onClose, cartItems = [], onUpdateQuantity, onRemove
             </div>
           ) : (
             cartItems.map((item) => (
-              <div key={item.cartId} className="flex gap-4 bg-white p-3 rounded-2xl shadow-sm border border-stone-100">
+              <div key={item.cartId} className="flex gap-4 bg-white p-3 rounded-2xl shadow-sm border border-coffee-100">
                 <img 
                   src={item.image} 
                   alt={item.name} 
-                  className="w-20 h-20 rounded-xl object-cover bg-stone-100"
+                  className="w-20 h-20 rounded-xl object-cover bg-coffee-100"
                 />
                 <div className="flex-1 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
                     <div className="flex-1 min-w-0 pr-2">
-                      <h4 className="font-bold text-stone-800 text-sm line-clamp-1">{item.displayName || item.name}</h4>
+                      <h4 className="font-bold text-coffee-premium text-sm line-clamp-1">{item.displayName || item.name}</h4>
                       {/* Hien thi options da chon */}
                       {item.options && Object.keys(item.options).some(k => item.options[k] !== null) && (
-                        <p className="text-[10px] text-stone-400 mt-0.5">
+                        <p className="text-[10px] text-coffee-400 mt-0.5">
                           {item.options.temperature === 'hot' ? 'Nóng' : item.options.temperature === 'cold' ? 'Đá' : ''}
                           {item.options.sugar === false ? ' • K.Đường' : ''}
                         </p>
@@ -145,7 +145,7 @@ const CartModal = ({ isOpen, onClose, cartItems = [], onUpdateQuantity, onRemove
                     </div>
                     <button 
                       onClick={() => onRemoveItem(item.cartId)}
-                      className="text-stone-400 hover:text-red-500 transition-colors p-1"
+                      className="text-coffee-400 hover:text-red-500 transition-colors p-1"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -156,20 +156,20 @@ const CartModal = ({ isOpen, onClose, cartItems = [], onUpdateQuantity, onRemove
                       {item.finalPrice.toLocaleString()}đ
                     </span>
                     
-                    <div className="flex items-center gap-3 bg-stone-100 rounded-lg p-1">
+                    <div className="flex items-center gap-3 bg-coffee-100 rounded-lg p-1">
                       <button 
                         onClick={() => onUpdateQuantity(item.cartId, -1)}
                         className="w-6 h-6 bg-white rounded-md flex items-center justify-center shadow-sm active:scale-90 transition-transform"
                         disabled={item.quantity <= 1}
                       >
-                        <Minus size={14} className={item.quantity <= 1 ? "text-stone-300" : "text-stone-700"} />
+                        <Minus size={14} className={item.quantity <= 1 ? "text-coffee-300" : "text-coffee-700"} />
                       </button>
                       <span className="font-bold text-sm w-4 text-center">{item.quantity}</span>
                       <button 
                         onClick={() => onUpdateQuantity(item.cartId, 1)}
                         className="w-6 h-6 bg-white rounded-md flex items-center justify-center shadow-sm active:scale-90 transition-transform"
                       >
-                        <Plus size={14} className="text-stone-700" />
+                        <Plus size={14} className="text-coffee-700" />
                       </button>
                     </div>
                   </div>
@@ -181,7 +181,7 @@ const CartModal = ({ isOpen, onClose, cartItems = [], onUpdateQuantity, onRemove
 
         {/* Footer */}
         {cartItems.length > 0 && (
-          <div className="p-5 bg-white border-t border-stone-200 rounded-b-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+          <div className="p-5 bg-white border-t border-coffee-200 rounded-b-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
             
             {/* Combo Đang Được Áp Dụng - COMPACT */}
             {currentTier && (
@@ -280,7 +280,7 @@ const CartModal = ({ isOpen, onClose, cartItems = [], onUpdateQuantity, onRemove
                             <img 
                               src={item.image} 
                               alt={item.name}
-                              className="w-12 h-12 rounded-lg object-cover bg-stone-100"
+                              className="w-12 h-12 rounded-lg object-cover bg-coffee-100"
                             />
                             
                             {/* Thông tin */}
@@ -360,8 +360,8 @@ const CartModal = ({ isOpen, onClose, cartItems = [], onUpdateQuantity, onRemove
             {/* Total Summary */}
             <div className="space-y-2 mb-4">
               <div className="flex justify-between items-center text-sm">
-                <span className="text-stone-500 font-medium">Tạm tính</span>
-                <span className="font-bold text-stone-700">{subtotal.toLocaleString()}đ</span>
+                <span className="text-coffee-600 font-medium">Tạm tính</span>
+                <span className="font-bold text-coffee-700">{subtotal.toLocaleString()}đ</span>
               </div>
               
               {/* Tier Discount */}
@@ -395,16 +395,16 @@ const CartModal = ({ isOpen, onClose, cartItems = [], onUpdateQuantity, onRemove
               )}
 
               {/* Total */}
-              <div className="flex justify-between items-center pt-2 border-t border-stone-200">
-                <span className="text-stone-800 font-black">Tổng cộng</span>
+              <div className="flex justify-between items-center pt-2 border-t border-coffee-200">
+                <span className="text-coffee-premium font-black">Tổng cộng</span>
                 <div className="text-right">
                   {totalDiscount > 0 && (
-                    <div className="text-xs text-stone-400 line-through">
+                    <div className="text-xs text-coffee-400 line-through">
                       {subtotal.toLocaleString()}đ
                     </div>
                   )}
-                  <span className="text-2xl font-black text-stone-800">
-                    {total.toLocaleString()} <span className="text-sm text-stone-500 font-bold">đ</span>
+                  <span className="text-2xl font-black text-coffee-premium">
+                    {total.toLocaleString()} <span className="text-sm text-coffee-600 font-bold">đ</span>
                   </span>
                   {totalDiscount > 0 && (
                     <div className="text-xs text-green-600 font-bold flex items-center justify-end gap-1 mt-0.5">

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
@@ -72,14 +72,17 @@ export const OrderProvider = ({ children }) => {
         }
 
         // Setup realtime listener cho orders collection
+        // Admin: tải tất cả đơn (để quản lý)
+        // User: giới hạn 50 đơn gần nhất (đủ xem lịch sử)
+        const queryLimit = isAdmin ? null : 50;
         unsubscribe = listenToCollection(COLLECTIONS.ORDERS, (data) => {
-          // Client-side sort vì Firestore query limit
+          // Client-side sort
           const sortedData = data.sort((a, b) =>
             new Date(b.createdAt) - new Date(a.createdAt)
           );
           setOrders(sortedData);
           setIsLoading(false);
-        }, conditions);
+        }, conditions, queryLimit);
 
       } catch (error) {
         console.error('❌ Error initializing orders:', error);
@@ -258,18 +261,19 @@ export const OrderProvider = ({ children }) => {
   };
 
   // Lấy đơn hàng theo trạng thái
-  const getOrdersByStatus = (status) => {
+  const getOrdersByStatus = useCallback((status) => {
     return orders.filter(order => order.status === status);
-  };
+  }, [orders]);
 
-  const value = {
+  // Memoize context value để tránh re-render children khi không cần
+  const value = useMemo(() => ({
     orders,
     isLoading,
     createOrder,
     updateOrderStatus,
     deleteOrder,
     getOrdersByStatus,
-  };
+  }), [orders, isLoading, createOrder, updateOrderStatus, deleteOrder, getOrdersByStatus]);
 
   return (
     <OrderContext.Provider value={value}>

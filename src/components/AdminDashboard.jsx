@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { X, Package, Clock, CheckCircle, Menu as MenuIcon, BarChart3, Settings, DollarSign, Trash2, Check, RefreshCw, MessageSquare } from 'lucide-react';
 import { useOrders } from '../contexts/OrderContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import OrderCard from './OrderCard';
 import MenuManager from './MenuManager';
 import StatsOverview from './StatsOverview';
 import FeedbackList from './FeedbackList';
@@ -16,73 +17,34 @@ const AdminDashboard = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  // Filter orders by status
-  const getOrdersByStatus = (status) => orders.filter(o => o.status === status);
+  // Filter orders by status — memoized to avoid recalculating on every render
+  const pendingOrders = useMemo(() => orders.filter(o => o.status === 'pending'), [orders]);
+  const preparingOrders = useMemo(() => orders.filter(o => o.status === 'preparing'), [orders]);
+  const readyOrders = useMemo(() => orders.filter(o => o.status === 'ready'), [orders]);
+  const completedOrders = useMemo(() => orders.filter(o => o.status === 'completed'), [orders]);
 
-  const pendingOrders = getOrdersByStatus('pending');
-  const preparingOrders = getOrdersByStatus('preparing');
-  const readyOrders = getOrdersByStatus('ready');
-  const completedOrders = getOrdersByStatus('completed');
-
-  // Calculate badges
-  const badges = {
+  // Badges — derived from memoized arrays
+  const badges = useMemo(() => ({
     pending: pendingOrders.length,
     preparing: preparingOrders.length,
     ready: readyOrders.length,
-  };
+  }), [pendingOrders, preparingOrders, readyOrders]);
 
-  const handleStatusChange = (orderId, newStatus) => {
+  const handleStatusChange = useCallback((orderId, newStatus) => {
     updateOrderStatus(orderId, newStatus);
-
-    // Xóa toast tại đây vì trong updateOrderStatus đã có toast success/error rồi
-    // Việc duplicate notification gây khó chịu cho user
-    // Chỉ rung để báo hiệu đã bấm
     if (navigator.vibrate) navigator.vibrate(50);
-  };
+  }, [updateOrderStatus]);
 
-  const confirmDelete = (order) => {
+  const confirmDelete = useCallback((order) => {
     setDeletingOrder(order);
-  };
+  }, []);
 
-  const performDelete = () => {
+  const performDelete = useCallback(() => {
     if (deletingOrder) {
       deleteOrder(deletingOrder.id);
       setDeletingOrder(null);
-      // Không cần toast ở đây nữa vì Context đã handle
     }
-  };
-
-  const OrderCard = ({ order, actionButton, secondaryAction }) => (
-    <div className="bg-white p-3 rounded-xl shadow-sm border border-stone-100 flex flex-col gap-2">
-      <div className="flex justify-between items-start">
-        <div className="flex items-center gap-2">
-          <span className="font-black text-base text-stone-800">#{order.orderCode}</span>
-          <span className="text-[10px] text-stone-400 font-bold bg-stone-100 px-1.5 py-0.5 rounded">
-            {new Date(order.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        </div>
-        <span className="font-black text-base text-orange-600">{order.total.toLocaleString()}đ</span>
-      </div>
-
-      <div className="bg-stone-50 rounded-lg p-2 text-xs font-medium text-stone-700 space-y-1">
-        {order.items.map((item, i) => (
-          <div key={i} className="flex justify-between border-b border-stone-200 last:border-0 pb-0.5 last:pb-0">
-            <span><span className="font-bold text-stone-900">{item.quantity}x</span> {item.displayName}</span>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex gap-2">
-        {actionButton}
-        <button
-          onClick={() => confirmDelete(order)}
-          className="w-10 flex items-center justify-center bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors"
-        >
-          <Trash2 size={16} />
-        </button>
-      </div>
-    </div>
-  );
+  }, [deletingOrder, deleteOrder]);
 
   return (
     <motion.div
@@ -215,6 +177,7 @@ const AdminDashboard = ({ isOpen, onClose }) => {
                       <OrderCard
                         key={order.id}
                         order={order}
+                        onDelete={confirmDelete}
                         actionButton={
                           <button
                             onClick={() => handleStatusChange(order.id, 'preparing')}
@@ -239,6 +202,7 @@ const AdminDashboard = ({ isOpen, onClose }) => {
                       <OrderCard
                         key={order.id}
                         order={order}
+                        onDelete={confirmDelete}
                         actionButton={
                           <button
                             onClick={() => handleStatusChange(order.id, 'ready')}
@@ -263,6 +227,7 @@ const AdminDashboard = ({ isOpen, onClose }) => {
                       <OrderCard
                         key={order.id}
                         order={order}
+                        onDelete={confirmDelete}
                         actionButton={
                           <button
                             onClick={() => handleStatusChange(order.id, 'completed')}
@@ -283,10 +248,11 @@ const AdminDashboard = ({ isOpen, onClose }) => {
                   {completedOrders.length === 0 ? (
                     <div className="text-center py-12 text-stone-400">Chưa có lịch sử đơn</div>
                   ) : (
-                    completedOrders.slice(0, 50).map(order => ( // Limit check history
+                    completedOrders.slice(0, 50).map(order => (
                       <OrderCard
                         key={order.id}
                         order={order}
+                        onDelete={confirmDelete}
                         actionButton={
                           <div className="flex-1 text-center py-2 text-xs font-bold text-stone-400 bg-stone-100 rounded-lg">
                             Đã hoàn thành lúc {(() => {
