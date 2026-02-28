@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# AI archive (legacy, không cần track)
+docs/ai-archive/
+docs/logs/

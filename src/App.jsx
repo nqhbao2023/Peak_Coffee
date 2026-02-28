@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect, useRef, startTransition } from 'react';
+﻿import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { ArrowUp } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import toast, { Toaster } from 'react-hot-toast';
@@ -20,6 +20,9 @@ import PaymentModal from './components/PaymentModal';
 import OrderHistory from './components/OrderHistory';
 import LoginModal from './components/LoginModal';
 import AdminDashboard from './components/AdminDashboard';
+import FeedbackModal from './components/FeedbackModal';
+import StreakBadge from './components/StreakBadge';
+import StreakModal from './components/StreakModal';
 
 function AppContent() {
   const [cartItems, setCartItems] = useState([]);
@@ -31,12 +34,14 @@ function AppContent() {
   const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isStreakOpen, setIsStreakOpen] = useState(false);
   const [orderCodeForPayment, setOrderCodeForPayment] = useState('');
   const [totalForPayment, setTotalForPayment] = useState(0);
   const [usedVoucherInCart, setUsedVoucherInCart] = useState(false);
   const mainRef = useRef(null);
 
-  const { addPoints, redeemVoucher, vouchers } = useLoyalty();
+  const { addPoints, useVoucher, vouchers } = useLoyalty();
   const { createOrder } = useOrders();
   const { user, isAdmin, isLoggedIn } = useAuth();
   const { menuItems, getCategories } = useMenu();
@@ -50,10 +55,10 @@ function AppContent() {
       // Chỉ setup FCM cho admin
       if (isAdmin && user) {
         console.log('🔔 Setting up FCM for admin...');
-
+        
         // Request permission và lấy token
         await getFCMToken(user.phone);
-
+        
         // Setup foreground messaging listener
         unsubscribe = setupForegroundMessaging();
       }
@@ -83,41 +88,24 @@ function AppContent() {
 
   // Cart Logic - Su dung cartId de phan biet cac mon co options khac nhau
   const addToCart = (item) => {
-    // Lấy số lượng cần thêm (mặc định là 1 nếu không có addQuantity)
-    const quantityToAdd = item.addQuantity || 1;
-
     setCartItems(prev => {
-      // Vì cartId chứa timestamp (từ ProductModal) nên mỗi lần thêm từ P.Modal là duy nhất
-      // Tuy nhiên nếu logic thay đổi sau này, vẫn giữ logic check existing
+      // Tim mon co cung cartId (bao gom ca options)
       const existingIndex = prev.findIndex(i => i.cartId === item.cartId);
-
-      // Loại bỏ thuộc tính tạm 'addQuantity' trước khi lưu vào state
-      // eslint-disable-next-line no-unused-vars
-      const { addQuantity, ...itemToSave } = item;
-
       if (existingIndex > -1) {
         const updated = [...prev];
-        updated[existingIndex] = {
-          ...updated[existingIndex],
-          quantity: updated[existingIndex].quantity + quantityToAdd
-        };
+        updated[existingIndex] = { ...updated[existingIndex], quantity: updated[existingIndex].quantity + 1 };
         return updated;
       }
-      return [...prev, { ...itemToSave, quantity: quantityToAdd }];
+      return [...prev, { ...item, quantity: 1 }];
     });
-
-    // Toast notification - Hiển thị số lượng đã thêm
-    toast.success(
-      quantityToAdd > 1
-        ? `Đã thêm ${quantityToAdd} món vào giỏ!`
-        : 'Đã thêm vào giỏ hàng!',
-      {
-        duration: 2000,
-        position: 'top-center',
-        icon: '🛒',
-      }
-    );
-
+    
+    // Toast notification
+    toast.success('Đã thêm vào giỏ hàng!', {
+      duration: 2000,
+      position: 'top-center',
+      icon: '🛒',
+    });
+    
     // Vibration feedback cho mobile
     if (navigator.vibrate) navigator.vibrate(50);
   };
@@ -161,80 +149,67 @@ function AppContent() {
 
     // Tạo mã đơn hàng tạm thời (sẽ được tạo chính thức khi confirm payment)
     const tempOrderCode = Date.now().toString().slice(-8).toUpperCase();
-
+    
     setOrderCodeForPayment(tempOrderCode);
     setTotalForPayment(total);
     setUsedVoucherInCart(useVoucherFlag);
-
+    
     // Đóng cart, mở payment
     setIsCartOpen(false);
     setIsPaymentOpen(true);
   };
 
   // Xác nhận thanh toán
-  const handlePaymentConfirm = async (paymentMethod) => {
+  const handlePaymentConfirm = (paymentMethod) => {
     if (cartItems.length === 0) return;
 
-    try {
-      // Sử dụng voucher nếu có
-      if (usedVoucherInCart && vouchers > 0) {
-        redeemVoucher();
-      }
-
-      // Tạo đơn hàng - Await here to get real string, not Promise
-      // Use logic consistent with Debt creation: use existing orderCodeForPayment if available
-      const newOrderCode = await createOrder(
-        cartItems,
-        totalForPayment,
-        paymentMethod,
-        usedVoucherInCart,
-        orderCodeForPayment // Pass the pre-generated code (matches Debt Record)
-      );
-
-      // ❌ KHÔNG tích điểm ngay khi đặt hàng
-      // ✅ Chỉ tích điểm khi admin duyệt đơn (status = 'completed')
-
-      // ✅ TĂNG STREAK khi đặt món
-      const streakResult = addStreak();
-
-      // Xóa giỏ hàng
-      setCartItems([]);
-      setIsPaymentOpen(false);
-
-      // Toast notification
-      const isDebt = paymentMethod === 'debt';
-      const title = isDebt
-        ? `✅ Đã ghi nợ cho ${user?.name || 'Khách hàng'}!`
-        : 'Đặt hàng thành công! 🎉';
-
-      toast.success(
-        <div>
-          <p className="font-bold">{title}</p>
-          <p className="text-xs mt-1">Mã đơn: #{newOrderCode}</p>
-          {!isDebt && (
-            <p className="text-xs mt-1 text-stone-500">
-              Điểm thưởng sẽ được cộng sau khi đơn hoàn thành
-            </p>
-          )}
-          {streakResult.success && streakResult.message && (
-            <p className="text-xs mt-1 text-orange-600 font-bold">
-              {streakResult.message}
-            </p>
-          )}
-        </div>,
-        {
-          duration: 3000,
-          position: 'top-center',
-          id: 'order-success', // Prevent duplicates
-        }
-      );
-
-      // Vibration feedback
-      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-    } catch (error) {
-      console.error("Payment Error:", error);
-      toast.error('Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại.');
+    // Sử dụng voucher nếu có
+    if (usedVoucherInCart && vouchers > 0) {
+      useVoucher();
     }
+
+    // Tạo đơn hàng
+    const orderCode = createOrder(cartItems, totalForPayment, paymentMethod, usedVoucherInCart);
+
+    // ❌ KHÔNG tích điểm ngay khi đặt hàng
+    // ✅ Chỉ tích điểm khi admin duyệt đơn (status = 'completed')
+
+    // ✅ TĂNG STREAK khi đặt món
+    const streakResult = addStreak();
+    if (streakResult.success && streakResult.reward) {
+      // Có nhận reward từ streak
+      if (streakResult.reward.type === 'voucher') {
+        // Streak reward được xử lý trong StreakModal
+        // User sẽ thấy animation và claim voucher từ modal
+      }
+    }
+
+    // Xóa giỏ hàng
+    setCartItems([]);
+    setIsPaymentOpen(false);
+
+    // Toast notification
+    toast.success(
+      <div>
+        <p className="font-bold">Đặt hàng thành công! 🎉</p>
+        <p className="text-xs mt-1">Mã đơn: #{orderCode}</p>
+        <p className="text-xs mt-1 text-stone-500">
+          Điểm thưởng sẽ được cộng sau khi đơn hoàn thành
+        </p>
+        {streakResult.success && (
+          <p className="text-xs mt-1 text-orange-600 font-bold">
+            {streakResult.message}
+          </p>
+        )}
+      </div>,
+      {
+        duration: 5000,
+        position: 'top-center',
+      }
+    );
+
+    // Vibration feedback
+    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
   };
 
   // Scroll to top handler
@@ -260,53 +235,46 @@ function AppContent() {
 
   // Prevent body scroll when modal is open
   useEffect(() => {
-    if (isCartOpen || selectedProduct || isPaymentOpen || isOrderHistoryOpen || isLoginOpen || isAdminOpen) {
+    if (isCartOpen || selectedProduct || isPaymentOpen || isOrderHistoryOpen || isLoginOpen || isAdminOpen || isFeedbackOpen || isStreakOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
     return () => { document.body.style.overflow = 'unset'; };
-  }, [isCartOpen, selectedProduct, isPaymentOpen, isOrderHistoryOpen, isLoginOpen, isAdminOpen]);
+  }, [isCartOpen, selectedProduct, isPaymentOpen, isOrderHistoryOpen, isLoginOpen, isAdminOpen, isFeedbackOpen, isStreakOpen]);
 
   // Scroll to top when category changes - INSTANT for better performance
   const handleCategoryChange = (category) => {
-    // Wrap state update in startTransition to prevent UI blocking (INP improvement)
-    startTransition(() => {
-      setActiveCategory(category);
-    });
-    // Removed scroll to top as requested by user
+    setActiveCategory(category);
+    // Instant scroll - no smooth for better performance
+    window.scrollTo({ top: 0, behavior: 'auto' });
   };
 
   return (
-    <div className='min-h-screen bg-gradient-to-b from-coffee-50 via-white to-coffee-50 font-sans text-coffee-premium pb-24 selection:bg-brand-earth/20 selection:text-brand-earth will-change-scroll'>
-      {/* Toast Container - Limit toasts to prevent freezing */}
-      <Toaster
-        position="top-center"
+    <div className='min-h-screen bg-stone-50 font-sans text-stone-900 pb-24 selection:bg-orange-200 selection:text-orange-900 will-change-scroll'>
+      {/* Toast Container */}
+      <Toaster 
+        position="bottom-center"
         reverseOrder={false}
         gutter={8}
-        limit={2} // Limit to 2 to prevent stacking too much
         containerStyle={{
-          top: 80,
-          bottom: 'auto',
+          bottom: 120,
         }}
         toastOptions={{
-          className: 'font-sans glass shadow-lg active:scale-95 transition-transform',
-          duration: 1500, // Faster (1.5s)
+          className: 'font-sans',
+          duration: 2000,
           style: {
             borderRadius: '16px',
             fontWeight: '600',
             padding: '12px 20px',
             fontSize: '14px',
             maxWidth: '90vw',
-            boxShadow: '0 10px 30px -5px rgba(0,0,0,0.15)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
             cursor: 'pointer',
-            background: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255,255,255,0.3)',
           },
           success: {
             iconTheme: {
-              primary: '#C25E00',
+              primary: '#10b981',
               secondary: '#fff',
             },
           },
@@ -319,44 +287,57 @@ function AppContent() {
         }}
       />
 
-      <Header
-        cartCount={totalItems}
+      <Header 
+        cartCount={totalItems} 
         onCartClick={() => setIsCartOpen(true)}
         onOrderHistoryClick={() => setIsOrderHistoryOpen(true)}
         onAdminClick={() => setIsAdminOpen(true)}
         onLoginClick={() => setIsLoginOpen(true)}
+        streakBadge={<StreakBadge onClick={() => setIsStreakOpen(true)} />}
       />
 
       <Hero />
 
-      <CategoryFilter
-        categories={categories}
-        activeCategory={activeCategory}
-        onSelectCategory={handleCategoryChange}
+      <CategoryFilter 
+        categories={categories} 
+        activeCategory={activeCategory} 
+        onSelectCategory={handleCategoryChange} 
       />
 
-      <main ref={mainRef} className='w-full max-w-md mx-auto px-4 mt-8 space-y-6 min-h-[50vh] will-change-scroll pb-24'>
-        <div className='flex items-center justify-between mb-2'>
-          <h3 className='font-black text-coffee-premium text-xl flex items-center gap-2 tracking-tight'>
+      <main ref={mainRef} className='w-full max-w-md mx-auto px-4 mt-6 space-y-4 min-h-[50vh] will-change-scroll'>
+        <div className='flex items-center justify-between mb-4'>
+          <h3 className='font-black text-stone-800 text-lg flex items-center gap-2'>
             {activeCategory === 'Tất cả' ? 'THỰC ĐƠN HÔM NAY' : activeCategory.toUpperCase()}
           </h3>
-          <span className='text-xs font-bold text-coffee-700 bg-white/60 px-3 py-1.5 rounded-full border border-white/50 shadow-sm'>
+          <span className='text-xs font-medium text-stone-400 bg-stone-100 px-2 py-1 rounded-full'>
             {filteredMenu.length} món
           </span>
         </div>
-
+        
         {/* Grid layout - Optimized with contain */}
-        <div className={`grid gap-5 contain-layout grid-cols-1`}>
-          {filteredMenu.map((item, index) => (
-            <MenuItem
-              key={item.id}
-              item={item}
-              onAddToCart={addToCart}
-              onOpenModal={setSelectedProduct}
-              priority={index < 20} // Tăng số lượng ảnh load eager để tránh warning intervention
-            />
-          ))}
-        </div>
+        {activeCategory === 'Nước Ngọt' ? (
+          <div className='grid grid-cols-1 gap-3 contain-layout'>
+            {filteredMenu.map((item) => (
+              <MenuItem 
+                key={item.id} 
+                item={item} 
+                onAddToCart={addToCart}
+                onOpenModal={setSelectedProduct}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className='grid gap-4 contain-layout'>
+            {filteredMenu.map((item) => (
+              <MenuItem 
+                key={item.id} 
+                item={item} 
+                onAddToCart={addToCart}
+                onOpenModal={setSelectedProduct}
+              />
+            ))}
+          </div>
+        )}
 
         {filteredMenu.length === 0 && (
           <div className='text-center py-10 text-stone-400'>
@@ -375,38 +356,40 @@ function AppContent() {
         </button>
       )}
 
-      <BottomNav />
+      <BottomNav onFeedbackClick={() => setIsFeedbackOpen(true)} />
 
       <AnimatePresence>
         {isCartOpen && (
-          <CartModal
+          <CartModal 
             key="cart-modal"
-            isOpen={isCartOpen}
+            isOpen={true} 
+            onClose={() => setIsCartOpen(false)}
             cartItems={cartItems}
             onUpdateQuantity={updateQuantity}
             onRemoveItem={removeFromCart}
             onCheckout={handleCheckout}
             onAddItem={addToCart}
-            onClose={() => setIsCartOpen(false)}
           />
         )}
       </AnimatePresence>
+
       <AnimatePresence>
         {selectedProduct && (
           <ProductModal
-            key={selectedProduct.id}
-            isOpen={!!selectedProduct}
+            key="product-modal"
+            isOpen={true}
+            onClose={() => setSelectedProduct(null)}
             product={selectedProduct}
             onAddToCart={addToCart}
-            onClose={() => setSelectedProduct(null)}
           />
         )}
       </AnimatePresence>
+
       <AnimatePresence>
         {isPaymentOpen && (
           <PaymentModal
             key="payment-modal"
-            isOpen={isPaymentOpen}
+            isOpen={true}
             onClose={() => setIsPaymentOpen(false)}
             total={totalForPayment}
             orderCode={orderCodeForPayment}
@@ -420,7 +403,7 @@ function AppContent() {
         {isOrderHistoryOpen && (
           <OrderHistory
             key="order-history"
-            isOpen={isOrderHistoryOpen}
+            isOpen={true}
             onClose={() => setIsOrderHistoryOpen(false)}
           />
         )}
@@ -430,7 +413,7 @@ function AppContent() {
         {isLoginOpen && (
           <LoginModal
             key="login-modal"
-            isOpen={isLoginOpen}
+            isOpen={true}
             onClose={() => setIsLoginOpen(false)}
           />
         )}
@@ -440,8 +423,28 @@ function AppContent() {
         {isAdminOpen && (
           <AdminDashboard
             key="admin-dashboard"
-            isOpen={isAdminOpen}
+            isOpen={true}
             onClose={() => setIsAdminOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isFeedbackOpen && (
+          <FeedbackModal
+            key="feedback-modal"
+            isOpen={true}
+            onClose={() => setIsFeedbackOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isStreakOpen && (
+          <StreakModal
+            key="streak-modal"
+            isOpen={true}
+            onClose={() => setIsStreakOpen(false)}
           />
         )}
       </AnimatePresence>
